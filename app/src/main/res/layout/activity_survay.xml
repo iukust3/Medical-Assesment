@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+
+    </data>
+
+    <LinearLayout
+        android:id="@+id/main_content"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/white"
+        android:orientation="vertical"
+        tools:context=".Activities.SurveyActivity">
+
+       <LinearLayout
+           android:layout_width="match_parent"
+           android:layout_height="?actionBarSize"
+           android:background="@color/blue_800">
+           <TextView
+               android:layout_width="match_parent"
+               android:layout_height="match_parent"
+               android:id="@+id/title"
+               android:text="Survay Fragment"
+               android:textSize="10pt"
+               android:textColor="@color/white"
+               android:gravity="center_vertical"
+               android:layout_weight="1"
+               android:layout_marginLeft="16dp"
+               />
+           <TextView
+               android:layout_width="wrap_content"
+               android:layout_height="match_parent"
+               android:gravity="center_vertical"
+               android:layout_marginRight="10dp"
+               android:id="@+id/score"
+               android:text="score 20"
+               android:visibility="gone"
+               android:textColor="@color/white"
+               android:textSize="10pt"
+               android:layout_marginEnd="10dp" />
+       </LinearLayout>
+
+        <FrameLayout
+            android:id="@+id/container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </LinearLayout>
+</layout>
