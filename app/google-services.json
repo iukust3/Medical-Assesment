@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "18585827932",
+    "firebase_url": "https://secret-well-258910.firebaseio.com",
+    "project_id": "secret-well-258910",
+    "storage_bucket": "secret-well-258910.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:18585827932:android:fdacac36129cc0c4ea8499",
+        "android_client_info": {
+          "package_name": "com.example.medicalassesment"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "18585827932-nj39mvrppirt821mgf0qbi2oohnis0bm.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBkidODegymH8tvRByVy3L_MSHAtOIZrlA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "18585827932-nj39mvrppirt821mgf0qbi2oohnis0bm.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

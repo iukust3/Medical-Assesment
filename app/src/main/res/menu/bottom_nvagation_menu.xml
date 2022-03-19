@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+  <group android:checkableBehavior="single">
+      <item
+          android:id="@+id/home"
+          android:title="Home"
+          android:icon="@drawable/ic_home_black_24dp"/>
+      <item
+          android:id="@+id/inspection"
+          android:title="Inspection"
+          android:icon="@drawable/ic_assignment_black_24dp"/>
+      <item
+          android:id="@+id/report"
+          android:title="Reports"
+          android:icon="@drawable/ic_report"/>
+      <item
+          android:id="@+id/sync"
+          android:title="Sync"
+          android:icon="@drawable/ic_sync"/>
+      <item
+          android:id="@+id/profile"
+          android:title="Profile"
+          android:icon="@drawable/ic_user_profile"/>
+  </group>
+</menu>
