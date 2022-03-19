@@ -27,7 +27,7 @@
             android:textSize="8pt"
             android:layout_marginTop="20dp"
             android:gravity="center"
-            android:text="Please draw your signature under the box below."/>
+            android:text="Please sign in the box below."/>
 
         <RelativeLayout
             android:layout_width="match_parent"

@@ -39,7 +39,7 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.signature.ObjectKey
 import com.example.medicalassesment.Activities.SignatureActivity
-import com.example.medicalassesment.adapter.CustomArrayAdpaterFecilities
+import com.example.medicalassesment.adapter.CustomArrayAdapterFacilities
 import com.example.medicalassesment.adapter.StartAdapter
 import com.example.medicalassesment.database.Dao
 import com.example.medicalassesment.database.MedicalDataBase
@@ -61,13 +61,15 @@ import kotlin.collections.ArrayList
 
 class StartViewHolder(
     view: NewItemLayoutBinding,
-    private val qustionAdapter: StartAdapter
+    private val qustionAdapter: StartAdapter,
+    var templateModel: TemplateModel
 ) : RecyclerView.ViewHolder(view.root), QustionViewHolderInterface {
     val dao: Dao = MedicalDataBase.getInstance(view.root.context).getDao()
 
     companion object {
         lateinit var previousLayout: LinearLayout;
         private lateinit var addresText: TextView
+        var isFirstTime = false
         lateinit var mQustionViewHolderInterface: QustionViewHolderInterface
         fun getQustionInterface(): QustionViewHolderInterface {
             return mQustionViewHolderInterface;
@@ -124,7 +126,6 @@ class StartViewHolder(
         binding.etqustion.error = null
         binding.etqustion.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
-                Log.e("TAG", "on text change")
                 mBaseQustion.setAnswer(s.toString())
                 qustionAdapter.updateItem(mBaseQustion, adapterPosition)
                 if (questionModel.getQuestionTypeId() == QUSTION_TYPE_EMAIL) {
@@ -148,6 +149,11 @@ class StartViewHolder(
                         }
                     }
                 } else {
+                    if (mBaseQustion.getTittle()?.contains("Facility Name", true)!!
+                        || mBaseQustion.getQ_Id()?.equals("-3")!!
+                    ) {
+                        mBaseQustion.setAnswer(mBaseQustion.getAnswer()?.toUpperCase())
+                        }
                     GlobalScope.launch {
                         if (index == 0)
                             dao.update(mBaseQustion as PreliminaryInfoModel)
@@ -214,7 +220,7 @@ class StartViewHolder(
             QUESTION_TYPE_TEXTAREA -> {
                 binding.etqustion.visibility = VISIBLE
                 binding.etqustion.inputType = InputType.TYPE_CLASS_TEXT
-                binding.etqustion.setSingleLine(false)
+                binding.etqustion.isSingleLine = false
                 binding.etqustion.imeOptions = EditorInfo.IME_FLAG_NO_ENTER_ACTION
                 binding.etqustion.minHeight = Utils.convertDpToPixel(120f).toInt()
                 binding.etqustion.error = null
@@ -222,12 +228,12 @@ class StartViewHolder(
             QUSTION_TYPE_READONLY -> {
                 binding.etqustion.visibility = VISIBLE
                 binding.etqustion.inputType = InputType.TYPE_CLASS_TEXT
-                binding.etqustion.setSingleLine(false)
+                binding.etqustion.isSingleLine = false
                 binding.etqustion.imeOptions = EditorInfo.IME_FLAG_NO_ENTER_ACTION
                 binding.etqustion.minHeight = Utils.convertDpToPixel(120f).toInt()
                 binding.etqustion.error = null
                 binding.etqustion.isEnabled = false;
-                addresText=binding.etqustion;
+                addresText = binding.etqustion;
             }
             QUSTION_TYPE_DROPDOWN -> {
                 try {
@@ -236,7 +242,8 @@ class StartViewHolder(
                     if (mBaseQustion.getAnswer() != null) {
                         binding.guidLine.visibility = VISIBLE
                         binding.guidLine.text =
-                            mBaseQustion.getDropDownItems()?.get(Integer.parseInt(mBaseQustion.getAnswer()))
+                            mBaseQustion.getDropDownItems()
+                                ?.get(Integer.parseInt(mBaseQustion.getAnswer().toString()))
                                 ?: ""
                     }
                 } catch (e: Exception) {
@@ -251,7 +258,7 @@ class StartViewHolder(
                             if (mBaseQustion.getAnswer() != null) {
                                 binding.guidLine.visibility = VISIBLE
                                 binding.guidLine.text = prefHelper.getState()
-                                    .getName(Integer.parseInt(mBaseQustion.getAnswer()))
+                                    .getName(Integer.parseInt(mBaseQustion.getAnswer().toString()))
                             }
                         } catch (e: Exception) {
                             e.printStackTrace()
@@ -269,7 +276,9 @@ class StartViewHolder(
                             if (mBaseQustion.getAnswer() != null) {
                                 binding.guidLine.visibility = VISIBLE
                                 binding.guidLine.text =
-                                    prefHelper.getCatogariesArray()[Integer.parseInt(mBaseQustion.getAnswer())]
+                                    prefHelper.getCatogariesArray()[Integer.parseInt(
+                                        mBaseQustion.getAnswer().toString()
+                                    )]
                             }
                         } catch (e: Exception) {
                             e.printStackTrace()
@@ -281,7 +290,9 @@ class StartViewHolder(
                     }
                     mBaseQustion.getTittle()?.toLowerCase()?.contains("lga")!! -> {
                         binding.dateTime.setOnClickListener {
-                            if (qustionAdapter.getItem(adapterPosition - 1).getAnswer().isNullOrEmpty()) {
+                            if (qustionAdapter.getItem(adapterPosition - 1).getAnswer()
+                                    .isNullOrEmpty()
+                            ) {
                                 Snackbar.make(
                                     it,
                                     "PLease select state first.",
@@ -300,7 +311,10 @@ class StartViewHolder(
                                 binding.guidLine.text =
                                     prefHelper.getState().state[Integer.parseInt(
                                         qustionAdapter.getItem(adapterPosition - 1).getAnswer()
-                                    )].lgas[Integer.parseInt(mBaseQustion.getAnswer())].name
+                                            .toString()
+                                    )].lgas[Integer.parseInt(
+                                        mBaseQustion.getAnswer().toString()
+                                    )].name
                             }
                         } catch (e: Exception) {
                             e.printStackTrace()
@@ -308,7 +322,9 @@ class StartViewHolder(
                     }
                     mBaseQustion.getTittle()?.toLowerCase()?.contains("ward")!! -> {
                         binding.dateTime.setOnClickListener {
-                            if (qustionAdapter.getItem(adapterPosition - 1).getAnswer().isNullOrEmpty()) {
+                            if (qustionAdapter.getItem(adapterPosition - 1).getAnswer()
+                                    .isNullOrEmpty()
+                            ) {
                                 Snackbar.make(
                                     it,
                                     "PLease select LGA first.",
@@ -327,8 +343,12 @@ class StartViewHolder(
                                 binding.guidLine.text =
                                     prefHelper.getState().state[Integer.parseInt(
                                         qustionAdapter.getItem(adapterPosition - 2).getAnswer()
-                                    )].lgas[Integer.parseInt(qustionAdapter.getItem(adapterPosition - 1).getAnswer())].wards[Integer.parseInt(
-                                        mBaseQustion.getAnswer()
+                                            .toString()
+                                    )].lgas[Integer.parseInt(
+                                        qustionAdapter.getItem(adapterPosition - 1).getAnswer()
+                                            .toString()
+                                    )].wards[Integer.parseInt(
+                                        mBaseQustion.getAnswer().toString()
                                     )].name
                             }
                         } catch (e: Exception) {
@@ -344,8 +364,13 @@ class StartViewHolder(
                             binding.dateTime.visibility = VISIBLE
                             if (mBaseQustion.getAnswer() != null) {
                                 binding.guidLine.visibility = VISIBLE
-                                binding.guidLine.text = prefHelper.getFecility()
-                                    .getName(Integer.parseInt(mBaseQustion.getAnswer()))
+                                binding.guidLine.text =
+                                    prefHelper.getFecility(templateModel.category.toString())
+                                        .getName(
+                                            Integer.parseInt(
+                                                mBaseQustion.getAnswer().toString()
+                                            )
+                                        )
                             }
                         } catch (e: Exception) {
                             e.printStackTrace()
@@ -412,9 +437,16 @@ class StartViewHolder(
             }
         }
         if (mBaseQustion.getTittle()?.contains("Coordinates")!!) {
+            binding.etqustion.visibility = VISIBLE
+            binding.etqustion.inputType = InputType.TYPE_CLASS_TEXT
+            binding.etqustion.imeOptions = EditorInfo.IME_FLAG_NO_ENTER_ACTION
+            binding.etqustion.error = null
+            binding.etqustion.isEnabled = false;
             if (mBaseQustion.getAnswer().isNullOrEmpty()) {
                 getLocation()
-            } else binding.etqustion.setText(mBaseQustion.getAnswer())
+            } else {
+                binding.etqustion.setText(mBaseQustion.getAnswer())
+            }
         }
 
         binding.executePendingBindings()
@@ -433,7 +465,12 @@ class StartViewHolder(
                     override fun gotLocation(location: Location?) {
                         if (location != null) {
                             it.runOnUiThread {
-                                binding.etqustion.setText("( ${location.latitude} , " + location.longitude + ")")
+                                Utils.getCompleteAddressString(
+                                    it,
+                                    location.latitude,
+                                    location.longitude
+                                )
+                                binding.etqustion.setText("${location.latitude} , " + location.longitude)
                             }
                         }
                     }
@@ -455,10 +492,12 @@ class StartViewHolder(
         alertDialog.setTitle(mBaseQustion.getTittle())
         val lp = WindowManager.LayoutParams()
         alertDialog.setSingleChoiceItems(
-            CustomArrayAdpater(context, android.R.layout.select_dialog_singlechoice,
-                prefHelper.getCatogaries().categories,CustomArrayAdpater.CATOGARY),
+            CustomArrayAdpater(
+                context, android.R.layout.select_dialog_singlechoice,
+                prefHelper.getCatogaries().categories, CustomArrayAdpater.CATOGARY
+            ),
             if (!mBaseQustion.getAnswer().isNullOrEmpty()) try {
-                Integer.parseInt(mBaseQustion.getAnswer())
+                Integer.parseInt(mBaseQustion.getAnswer().toString())
             } catch (e: Exception) {
                 -1
             } else -1
@@ -468,14 +507,7 @@ class StartViewHolder(
             mBaseQustion.setAnswer("$which")
             qustionAdapter.updateItem(mBaseQustion, adapterPosition)
 
-            GlobalScope.launch {
-                if (index == 0)
-                    dao.update(mBaseQustion as PreliminaryInfoModel)
-                if (index == 1)
-                    dao.update(mBaseQustion as QuestionModel)
-                if (index == 2)
-                    dao.update(mBaseQustion as FeedBackModel)
-            }
+            update()
             dialog.dismiss()
         }
         var dialog = alertDialog.create()
@@ -497,18 +529,18 @@ class StartViewHolder(
 
 
     private fun showFecility() {
-        var category = prefHelper.getFecility()
+        var category = prefHelper.getFecility(templateModel.category.toString())
         var alertDialog = AlertDialog.Builder(binding.root.context)
         alertDialog.setTitle(mBaseQustion.getTittle())
         val lp = WindowManager.LayoutParams()
         alertDialog.setSingleChoiceItems(
-            CustomArrayAdpaterFecilities(
+            CustomArrayAdapterFacilities(
                 context,
                 android.R.layout.select_dialog_singlechoice,
                 category.facilities.toTypedArray()
             ),
             if (!mBaseQustion.getAnswer().isNullOrEmpty()) try {
-                category.getIndex(Integer.parseInt(mBaseQustion.getAnswer()))
+                category.getIndex(Integer.parseInt(mBaseQustion.getAnswer().toString()))
             } catch (e: Exception) {
                 -1
             } else -1
@@ -516,26 +548,27 @@ class StartViewHolder(
             binding.guidLine.visibility = VISIBLE
             binding.guidLine.text = category.facilities[which].name
             mBaseQustion.setAnswer("${category.facilities[which].id}")
-            if (qustionAdapter.getItem(adapterPosition + 1).getQuestionTypeId() == QUSTION_TYPE_READONLY) {
+            if (qustionAdapter.getItem(adapterPosition + 1)
+                    .getQuestionTypeId() == QUSTION_TYPE_READONLY
+            ) {
                 addresText.text = category.facilities[which].address
             }
             qustionAdapter.updateItem(mBaseQustion, adapterPosition)
             GlobalScope.launch {
-                if (index == 0)
-                    dao.update(mBaseQustion as PreliminaryInfoModel)
-                if (index == 1)
-                    dao.update(mBaseQustion as QuestionModel)
-                if (index == 2)
-                    dao.update(mBaseQustion as FeedBackModel)
-                var fecility=category.facilities[which]
-                fecility.dateOfLastInspection=Utils.getFormattedDateSimple()
-                if(dao.getFacility(fecility.id).dateOfLastInspection == ""){
+                update()
+                val fecility = category.facilities[which]
+                fecility.dateOfLastInspection = Utils.getFormattedDateSimple()
+                try {
+                    if (dao.getFacility(fecility.id).dateOfLastInspection == "") {
+                        dao.insert(fecility)
+                    }
+                } catch (e: Exception) {
                     dao.insert(fecility)
                 }
             }
             dialog.dismiss()
         }
-        var dialog = alertDialog.create()
+        val dialog = alertDialog.create()
         lp.copyFrom(dialog.window!!.attributes)
         lp.width = WindowManager.LayoutParams.MATCH_PARENT
         lp.height = WindowManager.LayoutParams.WRAP_CONTENT
@@ -558,21 +591,23 @@ class StartViewHolder(
                 mBaseQustion.setImageuri(ArrayList())
             mBaseQustion.getImageuri()?.add(uri)
             qustionAdapter.updateItem(mBaseQustion, adapterPosition)
-            GlobalScope.launch {
-                if (index == 0)
-                    dao.update(mBaseQustion as PreliminaryInfoModel)
-                if (index == 1)
-                    dao.update(mBaseQustion as QuestionModel)
-                if (index == 2)
-                    dao.update(mBaseQustion as FeedBackModel)
-
-            }
+            update()
         } else {
             binding.signature.setImageBitmap(BitmapFactory.decodeFile(uri))
             mBaseQustion.setImageuri(ArrayList())
             mBaseQustion.setAnswer(Utils.getFormattedDateSimple(Calendar.getInstance().timeInMillis))
             mBaseQustion.getImageuri()?.add(uri)
             qustionAdapter.updateItem(mBaseQustion, adapterPosition)
+            update()
+        }
+    }
+
+    override fun onImageDelete(uri: String) {
+
+    }
+
+    private fun update() {
+        if (!isFirstTime) {
             GlobalScope.launch {
                 if (index == 0)
                     dao.update(mBaseQustion as PreliminaryInfoModel)
@@ -581,17 +616,8 @@ class StartViewHolder(
                 if (index == 2)
                     dao.update(mBaseQustion as FeedBackModel)
             }
-        }
-    }
-
-    private fun update() {
-        GlobalScope.launch {
-            if (index == 0)
-                dao.update(mBaseQustion as PreliminaryInfoModel)
-            if (index == 1)
-                dao.update(mBaseQustion as QuestionModel)
-            if (index == 2)
-                dao.update(mBaseQustion as FeedBackModel)
+        } else {
+            qustionAdapter.updateItem(mBaseQustion)
         }
     }
 
@@ -601,10 +627,12 @@ class StartViewHolder(
         alertDialog.setTitle(mBaseQustion.getTittle())
         val lp = WindowManager.LayoutParams()
         alertDialog.setSingleChoiceItems(
-            CustomArrayAdpater(context, android.R.layout.select_dialog_singlechoice,
-                state,CustomArrayAdpater.STATE),
+            CustomArrayAdpater(
+                context, android.R.layout.select_dialog_singlechoice,
+                state, CustomArrayAdpater.STATE
+            ),
             if (!mBaseQustion.getAnswer().isNullOrEmpty() && mBaseQustion.getAnswer() != "") try {
-                Integer.parseInt(mBaseQustion.getAnswer())
+                Integer.parseInt(mBaseQustion.getAnswer().toString())
             } catch (e: Exception) {
                 -1
             } else -1
@@ -613,14 +641,7 @@ class StartViewHolder(
             binding.guidLine.text = state[which].name
             mBaseQustion.setAnswer("$which")
             qustionAdapter.updateItem(mBaseQustion, adapterPosition)
-            GlobalScope.launch {
-                if (index == 0)
-                    dao.update(mBaseQustion as PreliminaryInfoModel)
-                if (index == 1)
-                    dao.update(mBaseQustion as QuestionModel)
-                if (index == 2)
-                    dao.update(mBaseQustion as FeedBackModel)
-            }
+            update()
             dialog.dismiss()
         }
         var dialog = alertDialog.create()
@@ -641,15 +662,19 @@ class StartViewHolder(
 
     private fun showLgaDilog() {
         var lgas =
-            prefHelper.getState().state[Integer.parseInt(qustionAdapter.getItem(adapterPosition - 1).getAnswer())].lgas
+            prefHelper.getState().state[Integer.parseInt(
+                qustionAdapter.getItem(adapterPosition - 1).getAnswer().toString()
+            )].lgas
         var alertDialog = AlertDialog.Builder(binding.root.context)
         alertDialog.setTitle(mBaseQustion.getTittle())
         val lp = WindowManager.LayoutParams()
         alertDialog.setSingleChoiceItems(
-            CustomArrayAdpater(context, android.R.layout.select_dialog_singlechoice,
-                lgas,CustomArrayAdpater.LGA),
+            CustomArrayAdpater(
+                context, android.R.layout.select_dialog_singlechoice,
+                lgas, CustomArrayAdpater.LGA
+            ),
             if (!mBaseQustion.getAnswer().isNullOrEmpty()) try {
-                Integer.parseInt(mBaseQustion.getAnswer())
+                Integer.parseInt(mBaseQustion.getAnswer().toString())
             } catch (e: Exception) {
                 -1
             } else -1
@@ -658,14 +683,7 @@ class StartViewHolder(
             binding.guidLine.text = lgas[which].name
             mBaseQustion.setAnswer("$which")
             qustionAdapter.updateItem(mBaseQustion, adapterPosition)
-            GlobalScope.launch {
-                if (index == 0)
-                    dao.update(mBaseQustion as PreliminaryInfoModel)
-                if (index == 1)
-                    dao.update(mBaseQustion as QuestionModel)
-                if (index == 2)
-                    dao.update(mBaseQustion as FeedBackModel)
-            }
+            update()
             dialog.dismiss()
         }
         var dialog = alertDialog.create()
@@ -686,17 +704,21 @@ class StartViewHolder(
 
     private fun showWardDilog() {
         var wards =
-            prefHelper.getState().state[Integer.parseInt(qustionAdapter.getItem(adapterPosition - 2).getAnswer())].lgas[Integer.parseInt(
-                qustionAdapter.getItem(adapterPosition - 1).getAnswer()
+            prefHelper.getState().state[Integer.parseInt(
+                qustionAdapter.getItem(adapterPosition - 2).getAnswer().toString()
+            )].lgas[Integer.parseInt(
+                qustionAdapter.getItem(adapterPosition - 1).getAnswer().toString()
             )].wards
         var alertDialog = AlertDialog.Builder(binding.root.context)
         alertDialog.setTitle(mBaseQustion.getTittle())
         val lp = WindowManager.LayoutParams()
         alertDialog.setSingleChoiceItems(
-            CustomArrayAdpater(context, android.R.layout.select_dialog_singlechoice,
-                wards,CustomArrayAdpater.WARD),
+            CustomArrayAdpater(
+                context, android.R.layout.select_dialog_singlechoice,
+                wards, CustomArrayAdpater.WARD
+            ),
             if (!mBaseQustion.getAnswer().isNullOrEmpty()) try {
-                Integer.parseInt(mBaseQustion.getAnswer())
+                Integer.parseInt(mBaseQustion.getAnswer().toString())
             } catch (e: Exception) {
                 -1
             } else -1
@@ -705,14 +727,7 @@ class StartViewHolder(
             binding.guidLine.text = wards[which].name
             mBaseQustion.setAnswer("$which")
             qustionAdapter.updateItem(mBaseQustion, adapterPosition)
-            GlobalScope.launch {
-                if (index == 0)
-                    dao.update(mBaseQustion as PreliminaryInfoModel)
-                if (index == 1)
-                    dao.update(mBaseQustion as QuestionModel)
-                if (index == 2)
-                    dao.update(mBaseQustion as FeedBackModel)
-            }
+            update()
             dialog.dismiss()
         }
         var dialog = alertDialog.create()

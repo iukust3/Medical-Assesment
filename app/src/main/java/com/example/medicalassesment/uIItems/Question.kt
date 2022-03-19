@@ -127,12 +127,12 @@ class Question(var questionModel: QuestionModel, context: Context) : LinearLayou
     }
 
     fun toggleArrow(view: View): Boolean {
-        if (view.rotation == 0f) {
+        return if (view.rotation == 0f) {
             view.animate().setDuration(200).rotation(180f)
-            return true
+            true
         } else {
             view.animate().setDuration(200).rotation(0f)
-            return false
+            false
         }
     }
 

@@ -3,19 +3,19 @@ package com.example.medicalassesment.Activities
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.view.ViewGroup
+import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentPagerAdapter
 import androidx.lifecycle.Observer
@@ -27,29 +27,41 @@ import com.example.medicalassesment.Fragments.InProgressFragment
 import com.example.medicalassesment.Helper.PrefHelper
 import com.example.medicalassesment.MyApplication
 import com.example.medicalassesment.R
+import com.example.medicalassesment.Utials.Utils
 import com.example.medicalassesment.ViewModels.InspectionViewModel
 import com.example.medicalassesment.ViewModels.InspectionViewState
 import com.example.medicalassesment.ViewModels.SuccessLoad
 import com.example.medicalassesment.ViewModels.onErrorLoad
+import com.example.medicalassesment.database.DatabaseRepository
+import com.example.medicalassesment.database.TemplateViewModel
 import com.example.medicalassesment.databinding.ActivityInspectionBinding
-import com.example.medicalassesment.service.UploadingService
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import pub.devrel.easypermissions.EasyPermissions
+import java.io.File
 import javax.inject.Inject
 
-class InspectionActivity : AppCompatActivity() {
+
+class InspectionActivity : BaseActivity(), EasyPermissions.PermissionCallbacks {
+    private var isComplete: Boolean = false
+    private var count: Int = 0
+    private lateinit var templateViewModel: TemplateViewModel
+
     @Inject
     lateinit var factory: ViewModelProvider.Factory
     private lateinit var inspectionViewModel: InspectionViewModel
-    private lateinit var mBinding: ActivityInspectionBinding;
+    private lateinit var mBinding: ActivityInspectionBinding
 
     val list = ArrayList<Fragment>()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        mBinding = DataBindingUtil.setContentView(this, R.layout.activity_inspection)
-        (application as MyApplication).appComponent.inject(this)
-        inspectionViewModel = ViewModelProviders.of(this, factory)[InspectionViewModel::class.java]
-        inspectionViewModel.getViewState().observe(this, Observer { setViewState(it) })
+        mBinding = ActivityInspectionBinding.inflate(layoutInflater, null, false)
+        iniateUi(mBinding.root)
+        setCurrantClassName(this)
         IniateUi()
+        (application as MyApplication).appComponent.inject(this)
+        inspectionViewModel = ViewModelProvider(this, factory)[InspectionViewModel::class.java]
+        inspectionViewModel.getViewState().observe(this, Observer { setViewState(it) })
+
         inspectionViewModel.onScreenLoaded()
         mBinding.search.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
@@ -83,11 +95,28 @@ class InspectionActivity : AppCompatActivity() {
             )
             // Show rationale and request permission.
         }
-      /*  try{
-            ContextCompat.startForegroundService(this,Intent(this, UploadingService::class.java))
-        }catch(e: java.lang.Exception){e.printStackTrace()}
-*/
+        isComplete = true
+        count = 0
+        templateViewModel = ViewModelProviders.of(this)[TemplateViewModel::class.java]
+        templateViewModel.templateModels.observe(this, Observer {
+            if (count != 0) {
+                if (isComplete) {
+                    mBinding.countCompleted.text = "${it.size}"
+                    templateViewModel.filterData("InProgress", "")
+                    isComplete = false
+                } else {
+                    mBinding.countInprogress.text = "${it.size}"
+                }
+            } else count++
+        })
+        templateViewModel.filterData("completed", "")
+
+
+        /* try{
+             ContextCompat.startForegroundService(this,Intent(this, UploadingService::class.java))
+         }catch(e: java.lang.Exception){e.printStackTrace()}*/
     }
+
 
     var fromUpdate = false
     private fun setViewState(inspectionViewState: InspectionViewState) {
@@ -96,7 +125,7 @@ class InspectionActivity : AppCompatActivity() {
                 hidedilog()
                 if (!fromUpdate)
                     IniateUi()
-                else fromUpdate = false;
+                else fromUpdate = false
             }
             is onErrorLoad -> {
                 hidedilog()
@@ -121,7 +150,7 @@ class InspectionActivity : AppCompatActivity() {
         mBinding.container.adapter = FragmentAdapter()
         mBinding.tablayout.setupWithViewPager(mBinding.container)
         mBinding.addNew.setOnClickListener {
-            startActivity(Intent(this, TemplateActivity::class.java))
+            startActivity(Intent(this, FecilityActivity::class.java))
         }
     }
 
@@ -130,17 +159,111 @@ class InspectionActivity : AppCompatActivity() {
         return true
     }
 
-    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
-        if (item?.itemId == R.id.logout) {
-            PrefHelper(this).logout()
-            startActivity(Intent(this, LoginActivity::class.java))
-            finish()
-        } else {
-            fromUpdate = true;
-            showLoadingDilog()
-            inspectionViewModel.updateStateLgas()
+    private fun hasStoragePermission(): Boolean {
+        return EasyPermissions.hasPermissions(
+            this,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            Manifest.permission.READ_EXTERNAL_STORAGE
+        )
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when {
+            item?.itemId == R.id.logout -> {
+                PrefHelper(this).setIsLogined(false)
+                startActivity(Intent(this, LoginActivity::class.java))
+                finish()
+                return true
+            }
+            item?.itemId == R.id.update_templates -> {
+                fromUpdate = true
+                showLoadingDialog()
+                inspectionViewModel.updateTamplets()
+                return true
+            }
+            item?.itemId == R.id.clearData -> {
+                var alertDialog = AlertDialog.Builder(this)
+                alertDialog.setTitle("Confirm")
+                alertDialog.setMessage("Are you sure you want to clear all data?\nYou will need to re-login after clear data.")
+                alertDialog.setNegativeButton(
+                    "Yes"
+                ) { p0, _ ->
+                    run {
+                        p0.dismiss()
+                        PrefHelper(this).clear()
+                        var databaseRepository = DatabaseRepository(application)
+                        databaseRepository.clearAllTable()
+                        if (hasStoragePermission()) {
+                            deleteRecursive(Utils.getFolderPath(this@InspectionActivity))
+                            deleteRecursive(File(Utils.getReportsFolder(this@InspectionActivity)))
+                            startActivity(Intent(this, LoginActivity::class.java))
+                            finish()
+                        } else {
+                            EasyPermissions.requestPermissions(
+                                this,
+                                "Require Storage permission to delete inspection Images",
+                                400,
+                                Manifest.permission.READ_EXTERNAL_STORAGE,
+                                Manifest.permission.WRITE_EXTERNAL_STORAGE
+                            )
+                        }
+                    }
+                }
+                alertDialog.setPositiveButton(
+                    "NO"
+                ) { p0, _ -> p0.dismiss() }
+                var dialog = alertDialog.create()
+                dialog.show()
+                dialog.getButton(AlertDialog.BUTTON_NEGATIVE).background =
+                    ContextCompat.getDrawable(
+                        this,
+                        R.drawable.option_green
+                    )
+                dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(
+                    ContextCompat.getColor(
+                        this,
+                        R.color.white
+                    )
+                )
+
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(
+                    ContextCompat.getColor(
+                        this,
+                        R.color.white
+                    )
+                )
+                setMargins(dialog.getButton(AlertDialog.BUTTON_NEGATIVE), 0, 0, 10, 0)
+                setMargins(dialog.getButton(AlertDialog.BUTTON_POSITIVE), 10, 0, 0, 0)
+                dialog.getButton(AlertDialog.BUTTON_POSITIVE).background =
+                    ContextCompat.getDrawable(
+                        this,
+                        R.drawable.option_red
+                    )
+
+            }
+            item?.itemId != android.R.id.home -> {
+                fromUpdate = true
+                showLoadingDialog()
+                inspectionViewModel.updateStateLgas()
+                return true
+            }
         }
-        return true
+        return super.onOptionsItemSelected(item)
+    }
+
+    private fun deleteRecursive(fileOrDirectory: File) {
+        if (fileOrDirectory.isDirectory) for (child in fileOrDirectory.listFiles()) deleteRecursive(
+            child
+        )
+        fileOrDirectory.delete()
+    }
+
+    private fun setMargins(view: View, left: Int, top: Int, right: Int, bottom: Int) {
+        if (view.layoutParams is ViewGroup.MarginLayoutParams) {
+            val p = view.layoutParams as ViewGroup.MarginLayoutParams
+            p.setMargins(left, top, right, bottom)
+            view.requestLayout()
+        }
     }
 
     inner class FragmentAdapter : FragmentPagerAdapter(
@@ -149,7 +272,7 @@ class InspectionActivity : AppCompatActivity() {
     ) {
 
         override fun getItem(position: Int): Fragment {
-            return list[position];
+            return list[position]
         }
 
         override fun getPageTitle(position: Int): CharSequence? {
@@ -195,18 +318,46 @@ class InspectionActivity : AppCompatActivity() {
                 alertDialog.show()
                 // Show rationale and request permission.
             }
+        } else {
+            EasyPermissions.onRequestPermissionsResult(
+                requestCode,
+                permissions,
+                grantResults,
+                this
+            )
         }
     }
 
-    private lateinit var loadingdilog: BottomSheetDialog
-    private fun showLoadingDilog() {
+    override fun onPermissionsGranted(requestCode: Int, perms: MutableList<String>) {
+        if (requestCode == 400) {
+            deleteRecursive(Utils.getFolderPath(this))
+            deleteRecursive(File(Utils.getReportsFolder(this)))
+            startActivity(Intent(this, LoginActivity::class.java))
+            finish()
+        }
+    }
 
+    override fun onPermissionsDenied(requestCode: Int, perms: MutableList<String>) {
+
+    }
+
+    override fun onResume() {
+        setSelectedNavigationItem(R.id.home)
+        isComplete = true
+        count = 1
+        templateViewModel.filterData("completed", "")
+        super.onResume()
+    }
+
+    private lateinit var loadingdilog: BottomSheetDialog
+    private fun showLoadingDialog() {
         loadingdilog = BottomSheetDialog(this)
         loadingdilog.setContentView(R.layout.loading_dilog)
         loadingdilog.setCancelable(false)
-        val statusTextView: TextView = loadingdilog.findViewById<TextView>(R.id.status)!!
+        loadingdilog.findViewById<Button>(R.id.button_ok)?.visibility = View.GONE
+        val statusTextView: TextView = loadingdilog.findViewById(R.id.status)!!
         val loadingProgress: ProgressBar =
-            loadingdilog.findViewById<ProgressBar>(R.id.loading_progress)!!
+            loadingdilog.findViewById(R.id.loading_progress)!!
         statusTextView.visibility = View.GONE
         loadingProgress.visibility = View.GONE
         if (!loadingdilog.isShowing)

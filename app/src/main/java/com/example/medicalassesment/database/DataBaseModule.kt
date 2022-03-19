@@ -9,5 +9,5 @@ import javax.inject.Singleton
 class DataBaseModule(val application: Application) {
     @Provides
     @Singleton
-    fun provideDataBaseRepositroy():DatabaseRepository=DatabaseRepository(application)
+    fun provideDataBaseRepository():DatabaseRepository=DatabaseRepository(application)
 }

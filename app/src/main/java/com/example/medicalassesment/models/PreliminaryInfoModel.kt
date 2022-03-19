@@ -3,6 +3,7 @@ package com.example.medicalassesment.models
 import android.util.Log
 import androidx.room.*
 import com.example.medicalassesment.Utials.Constant
+import com.example.medicalassesment.Utials.Constant.Companion.QUSTION_TYPE_SIGNATURE
 import com.google.gson.Gson
 import com.google.gson.annotations.Expose
 import com.google.gson.annotations.SerializedName
@@ -57,6 +58,14 @@ class PreliminaryInfoModel : BaseQustion {
 
     override fun setUploaded(uploaded: Boolean) {
         this.isUploaded = uploaded;
+    }
+
+    override fun setCurrentComment(comment: String?) {
+
+    }
+
+    override fun getCurrentComments(): String? {
+        return ""
     }
 
     override fun setQ_Id(string: String) {
@@ -119,16 +128,32 @@ class PreliminaryInfoModel : BaseQustion {
     override fun getQuestionTypeId(): String? {
         if (this.question_type_id == null) {
             when (this.questiontype) {
-                "textarea"-> return Constant.QUESTION_TYPE_TEXTAREA
-                "signature"-> return Constant.QUSTION_TYPE_SIGNATURE
-                "dropdown"-> return Constant.QUSTION_TYPE_DROPDOWN
-                "textbox"-> return Constant.QUESTION_TYPE_EDITTEXT
-                "past date"-> return Constant.QUSTION_TYPE_DATEPAST
-                "future date"-> return Constant.QUSTION_TYPE_DATEFUTURE
-                "phone"-> return Constant.QUSTION_TYPE_PHONE
-                "email"-> return Constant.QUSTION_TYPE_EMAIL
-                "Section Title"-> return Constant.QUSTION_TYPE_SECTIONTITTLE
+                "textarea"-> this.question_type_id= Constant.QUESTION_TYPE_TEXTAREA
+                "signature"-> this.question_type_id= QUSTION_TYPE_SIGNATURE
+                "dropdown"-> this.question_type_id= Constant.QUSTION_TYPE_DROPDOWN
+                "textbox"-> this.question_type_id= Constant.QUESTION_TYPE_EDITTEXT
+                "past date"-> this.question_type_id= Constant.QUSTION_TYPE_DATEPAST
+                "future date"-> this.question_type_id= Constant.QUSTION_TYPE_DATEFUTURE
+                "phone"-> this.question_type_id= Constant.QUSTION_TYPE_PHONE
+                "email"-> this.question_type_id= Constant.QUSTION_TYPE_EMAIL
+                "Section Title"-> this.question_type_id= Constant.QUSTION_TYPE_SECTIONTITTLE
             }
+        }
+        try {
+            if(this.title!=null){
+                if(this.title?.toLowerCase()?.contains("phone")!!){
+                    this.question_type_id= Constant.QUSTION_TYPE_PHONE
+                }
+            }
+        } catch (e: Exception) {
+        }
+        try {
+            if(this.title!=null){
+                if(this.title?.toLowerCase()?.contains("email")!!){
+                    this.question_type_id= Constant.QUSTION_TYPE_EMAIL
+                }
+            }
+        } catch (e: Exception) {
         }
         return this.question_type_id
     }

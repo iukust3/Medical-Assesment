@@ -7,43 +7,66 @@
 
     </data>
 
-    <LinearLayout
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@color/white"
-        android:orientation="vertical"
-        tools:context=".Activities.OverViewActivity">
+        android:layout_height="match_parent">
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="?actionBarSize"
-            android:background="@color/blue_800">
+            android:layout_height="match_parent"
+            android:layout_above="@id/butonsLayout"
+            android:background="@color/white"
+            android:orientation="vertical"
+            tools:context=".Activities.OverViewActivity">
 
-            <TextView
+            <androidx.appcompat.widget.Toolbar
+                android:id="@+id/toolbar"
+                android:layout_width="match_parent"
+                android:layout_height="?actionBarSize"
+                android:background="@color/blue_800"
+                app:title="Preview"
+                app:titleTextColor="@color/white" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerView"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:gravity="center_vertical"
-                android:paddingStart="20dp"
-                android:paddingLeft="20dp"
-                android:text="Preview"
-                android:textColor="@color/white"
-                android:textSize="10pt" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:layout_marginEnd="10dp"
-                android:layout_marginRight="10dp"
-                android:gravity="center_vertical"
-                android:id="@+id/markComplte"
-                android:text="Complete Inspection"
-                android:textColor="@color/white" />
+                tools:listitem="@layout/new_item_layout" />
         </LinearLayout>
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerView"
+
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            tools:listitem="@layout/new_item_layout" />
-    </LinearLayout>
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_alignParentBottom="true"
+            android:layout_marginTop="10dp"
+
+            android:layout_marginBottom="10dp"
+            android:id="@+id/butonsLayout">
+            <Button
+                android:id="@+id/makeChanges"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginEnd="20dp"
+                android:layout_marginRight="20dp"
+                android:text="Make Changes"
+                android:layout_marginStart="20dp"
+                android:textColor="@color/white"
+                android:layout_weight="1"
+                app:backgroundTint="@color/red_600" />
+            <Button
+                android:id="@+id/markComplte"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                 android:layout_gravity="center"
+                android:layout_marginEnd="20dp"
+                android:layout_marginRight="20dp"
+                android:text="Complete Inspection"
+                android:textColor="@color/white"
+                android:layout_weight="1"
+                app:backgroundTint="@color/green_600" />
+        </LinearLayout>
+
+    </RelativeLayout>
 </layout>

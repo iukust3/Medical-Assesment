@@ -2,7 +2,7 @@ package com.example.medicalassesment.models
 
 
 data class Fecilities(
-    val facilities: List<Facility> = listOf()
+    var facilities: List<Facility> = listOf()
 ) {
     fun getIndex(id: Int): Int {
         facilities.forEach {

@@ -14,18 +14,19 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.example.medicalassesment.Activities.TemplateActivity
+import com.example.medicalassesment.Helper.PrefHelper
 import com.example.medicalassesment.adapter.InspectionAdapter
 import com.example.medicalassesment.database.TemplateViewModel
 
 import com.example.medicalassesment.R
+import com.example.medicalassesment.adapter.InspectioToolsMainAdapter
 import com.example.medicalassesment.databinding.FragmentSavedBinding
+import com.example.medicalassesment.models.InspectionToolsItem
 
 class NewFragment : Fragment(), BaseFragment, SwipeRefreshLayout.OnRefreshListener {
     override fun onUpdate() {
-        Log.e("TAG","on Update new")
         try {
-            mBinding.swipRefresh.isRefreshing=false
-            templateViewModel.filterData("New", "")
+             templateViewModel.filterData("New", "")
         } catch (e: Exception) {
         }
 
@@ -33,8 +34,6 @@ class NewFragment : Fragment(), BaseFragment, SwipeRefreshLayout.OnRefreshListen
 
     override fun onRefresh() {
         templateActivity.updateTemplete()
-        Log.e("TAG"," Update new ")
-
     }
 
     override fun onTextChange(string: String) {
@@ -56,19 +55,52 @@ class NewFragment : Fragment(), BaseFragment, SwipeRefreshLayout.OnRefreshListen
         // Inflate the layout for this fragment
         mBinding =
             DataBindingUtil.inflate(layoutInflater, R.layout.fragment_saved, container, false)
-       mBinding.swipRefresh.setOnRefreshListener(this)
         return mBinding.root
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
         mBinding.recyclerView.layoutManager =
-            LinearLayoutManager(context, RecyclerView.VERTICAL, false)
+            LinearLayoutManager(
+                context,
+                RecyclerView.VERTICAL,
+                false
+            )
         templateViewModel = ViewModelProviders.of(this)[TemplateViewModel::class.java]
-        templateViewModel.templateModels.observe(this, Observer {
-            var inspectinAdapter = InspectionAdapter(it)
+        templateViewModel.templateModels.observe(viewLifecycleOwner, Observer {
+            var categorys = context?.let { it1 -> PrefHelper(it1).getCatogaries() }
+            var list: ArrayList<InspectionToolsItem> = ArrayList()
+            categorys?.categories?.forEach { category ->
+                var inspectionToolsItem = InspectionToolsItem();
+                inspectionToolsItem.name = category.name;
+                list.add(inspectionToolsItem)
+
+            }
+            list.forEach { inspectionItem ->
+
+                var item = InspectionToolsItem.Inspectiontype("Location inspection", ArrayList())
+                item.list = it.filter { templateModel ->
+                    templateModel.category == inspectionItem.name && templateModel.type == "1" && templateModel.status == "New";
+                }
+                inspectionItem.list.add(item)
+                item = InspectionToolsItem.Inspectiontype("Registration inspection", ArrayList())
+                item.list = it.filter { templateModel ->
+                    templateModel.category == inspectionItem.name && templateModel.type == "2" && templateModel.status == "New"
+                }
+                inspectionItem.list.add(item)
+                item = InspectionToolsItem.Inspectiontype("Routine inspection", ArrayList())
+                item.list =
+                    it.filter { templateModel -> templateModel.category == inspectionItem.name && templateModel.type == "3" && templateModel.status == "New" }
+                inspectionItem.list.add(item)
+                item = InspectionToolsItem.Inspectiontype("Monitoring inspection", ArrayList())
+                item.list =
+                    it.filter { templateModel -> templateModel.category == inspectionItem.name && templateModel.type == "4" && templateModel.status == "New" }
+                inspectionItem.list.add(item)
+            }
+
+            var inspectinAdapter = InspectioToolsMainAdapter(list)
             mBinding.recyclerView.adapter = inspectinAdapter
-            mBinding.swipRefresh.isRefreshing=false
+
         })
         templateViewModel.filterData("New", "")
     }
@@ -91,4 +123,5 @@ class NewFragment : Fragment(), BaseFragment, SwipeRefreshLayout.OnRefreshListen
 
             }
     }
+
 }

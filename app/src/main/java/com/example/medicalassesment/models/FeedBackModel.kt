@@ -16,6 +16,14 @@ class FeedBackModel : BaseQustion {
         this.isUploaded = uploaded;
     }
 
+    override fun setCurrentComment(comment: String?) {
+
+    }
+
+    override fun getCurrentComments(): String? {
+    return ""
+    }
+
     override fun getQ_Id(): String? {
         return question_id
     }

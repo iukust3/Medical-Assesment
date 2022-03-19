@@ -1,5 +1,6 @@
 package com.example.medicalassesment.Utials
 
+import com.example.medicalassesment.R
 import com.example.medicalassesment.models.PreliminaryInfoModel
 import com.example.medicalassesment.models.TemplateModel
 
@@ -17,20 +18,23 @@ class Constant {
         const val QUSTION_TYPE_EMAIL = "11"
         const val QUSTION_TYPE_PROXIMITY = "12"
         const val QUSTION_TYPE_SECTIONTITTLE = "13"
-        const val QUSTION_TYPE_READONLY = "14"
-        const val HARD_DEAL_BREKER="hard"
-        const val SOFT_DEAL_BREKER="soft"
-        const val NORMAL_DEAL_BREKER="normal"
+        const val QUSTION_TYPE_MULTICHICE = "14"
+        const val QUSTION_TYPE_READONLY = "15"
+        const val HARD_DEAL_BREKER = "hard"
+        const val SOFT_DEAL_BREKER = "soft"
+        const val NORMAL_DEAL_BREKER = "normal"
 
         //Template Type
         const val TEMPLETE_TYPE_LOCATION = "1"
         const val TEMPLETE_TYPE_FECILITY = "2"
         const val TEMPLETE_TYPE_ROUTEN = "3"
+        @JvmStatic
         fun getType(type: String): String {
             return when (type) {
                 "1" -> "Location Inspection"
-                "2" -> "Facility Inspection"
-                else -> "Routine Inspection"
+                "2" -> "Registration Inspection"
+                "3" -> "Routine Inspection"
+                else -> "Monitoring inspection"
             }
         }
 
@@ -57,12 +61,10 @@ class Constant {
          LGA:
          Ward:*/
         fun getDefaultQuestions(templateModel: TemplateModel): List<PreliminaryInfoModel> {
-
             list = ArrayList()
             var preliminaryInfoModel = PreliminaryInfoModel()
-
-            preliminaryInfoModel.preliminery_info_id = -2
-            preliminaryInfoModel.title = "Coordinates: (Latitude and Longitude)"
+            preliminaryInfoModel.preliminery_info_id = -7
+            preliminaryInfoModel.title = "INSPECTION TOKEN  :"
             preliminaryInfoModel.question_type_id = QUESTION_TYPE_EDITTEXT
             preliminaryInfoModel.setPriority("1")
             preliminaryInfoModel.questiontype = "default"
@@ -71,18 +73,24 @@ class Constant {
             preliminaryInfoModel = PreliminaryInfoModel()
             preliminaryInfoModel.preliminery_info_id = -1
             preliminaryInfoModel.title = "Facility Name:"
-            preliminaryInfoModel.question_type_id =
-                if (templateModel.type == "1") QUESTION_TYPE_EDITTEXT else QUSTION_TYPE_DROPDOWN
+            preliminaryInfoModel.question_type_id = QUESTION_TYPE_EDITTEXT
             preliminaryInfoModel.setPriority("1")
             preliminaryInfoModel.questiontype = "default"
             list = list.plus(preliminaryInfoModel)
 
 
             preliminaryInfoModel = PreliminaryInfoModel()
+            preliminaryInfoModel.preliminery_info_id = -2
+            preliminaryInfoModel.title = "Coordinates: (Latitude and Longitude)"
+            preliminaryInfoModel.setPriority("1")
+            preliminaryInfoModel.question_type_id = QUESTION_TYPE_EDITTEXT
+            preliminaryInfoModel.questiontype = "default"
+            list = list.plus(preliminaryInfoModel)
+
+            preliminaryInfoModel = PreliminaryInfoModel()
             preliminaryInfoModel.preliminery_info_id = -3
             preliminaryInfoModel.title = "Address : "
-            preliminaryInfoModel.question_type_id =
-                if (templateModel.type == "1") QUESTION_TYPE_TEXTAREA else QUSTION_TYPE_READONLY
+            preliminaryInfoModel.question_type_id = QUESTION_TYPE_TEXTAREA
             preliminaryInfoModel.setPriority("1")
             preliminaryInfoModel.questiontype = "default"
             list = list.plus(preliminaryInfoModel)
@@ -108,9 +116,9 @@ class Constant {
             preliminaryInfoModel.preliminery_info_id = -4
             preliminaryInfoModel.title = "Ward :"
             preliminaryInfoModel.question_type_id = QUSTION_TYPE_DROPDOWN
-            preliminaryInfoModel.setPriority("1")
+            preliminaryInfoModel.setPriority("0")
             preliminaryInfoModel.questiontype = "default"
-            list = list.plus(preliminaryInfoModel)
+            list= list.plus(preliminaryInfoModel)
 
             /* preliminaryInfoModel = PreliminaryInfoModel()
                  preliminaryInfoModel.preliminery_info_id = -7
@@ -179,5 +187,17 @@ class Constant {
             return list
         }
 
+        @JvmStatic
+        fun getIcon(name: String): Int {
+            return when (name) {
+                "Hospital Pharmacy" ->
+                    R.drawable.ic_hospital_pharmacy
+                "Community Pharmacy" -> R.drawable.ic_community_pharmacy
+                "Drug Manufacturing" -> R.drawable.ic_drug_manufacturing
+                "Wholesale Centres" -> R.drawable.ic_drug_distribution
+                "Scientific Office" -> R.drawable.ic_community_pharmacy
+                else -> R.drawable.ic_ppmv
+            }
+        }
     }
 }

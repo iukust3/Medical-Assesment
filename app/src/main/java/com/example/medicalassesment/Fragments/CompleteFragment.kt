@@ -8,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -16,8 +17,9 @@ import com.example.medicalassesment.adapter.InspectionAdapter
 import com.example.medicalassesment.database.TemplateViewModel
 
 import com.example.medicalassesment.R
+import com.example.medicalassesment.Utials.Utils
 
-class CompleteFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener,BaseFragment {
+class CompleteFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener, BaseFragment {
     override fun onUpdate() {
     }
 
@@ -36,8 +38,8 @@ class CompleteFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener,BaseFr
     ): View? {
         // Inflate the layout for this fragment
         val view = inflater.inflate(R.layout.fragment_complete, container, false)
-        recyclerView = view.findViewById<RecyclerView>(R.id.recyclerView)
-        swipeRefreshLayout = view.findViewById<SwipeRefreshLayout>(R.id.swip_refresh)
+        recyclerView = view.findViewById(R.id.recyclerView)
+        swipeRefreshLayout = view.findViewById(R.id.swip_refresh)
         swipeRefreshLayout.setOnRefreshListener(this::onRefresh)
         recyclerView.layoutManager = LinearLayoutManager(context, RecyclerView.VERTICAL, false)
         loadData()
@@ -45,20 +47,24 @@ class CompleteFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener,BaseFr
     }
 
     private fun loadData() {
-        templateViewModel = ViewModelProviders.of(this)[TemplateViewModel::class.java]
-        templateViewModel.templateModels.observe(this, Observer {
+        templateViewModel = ViewModelProvider(this)[TemplateViewModel::class.java]
+        templateViewModel.templateModels.observe(viewLifecycleOwner, Observer {
+            var list=   it.sortedWith(Comparator { o2, o1 ->
+                Utils.getFormattedDateSimple(o1.inspectionConductedOn!!).compareTo(Utils.getFormattedDateSimple(o2.inspectionConductedOn!!)) })
+
             recyclerView.adapter = InspectionAdapter(
-                it
+                list
             )
             swipeRefreshLayout.isRefreshing = false
         })
         templateViewModel.filterData("completed","")
-
     }
+
     override fun onTextChange(string: String) {
 
-        templateViewModel.filterData("completed", string)
-     }
+        templateViewModel.filterData("completed",string)
+    }
+
     override fun onAttach(context: Context) {
         super.onAttach(context)
     }
@@ -67,12 +73,16 @@ class CompleteFragment : Fragment(), SwipeRefreshLayout.OnRefreshListener,BaseFr
         super.onDetach()
     }
 
+    override fun onResume() {
+        templateViewModel.filterData("completed","")
+        super.onResume()
+    }
     interface OnFragmentInteractionListener {
         fun onFragmentInteraction(uri: Uri)
     }
 
     override fun onRefresh() {
-       templateViewModel.filterData("completed","")
+        templateViewModel.filterData("completed","")
     }
 
     companion object {

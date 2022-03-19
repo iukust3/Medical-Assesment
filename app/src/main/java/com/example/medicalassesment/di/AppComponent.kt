@@ -5,6 +5,7 @@ import com.example.medicalassesment.Activities.*
 import com.example.medicalassesment.database.DataBaseModule
 import com.example.medicalassesment.MyApplication
 import com.example.medicalassesment.Retrofit.NetworkModule
+import com.example.medicalassesment.service.UploadingService
 import dagger.BindsInstance
 import dagger.Component
 import dagger.android.support.AndroidSupportInjectionModule
@@ -19,6 +20,7 @@ interface AppComponent {
     fun inject(inspectionActivity: InspectionActivity)
     fun inject(templateActivity: TemplateActivity)
     fun inject(overViewActivity: OverViewActivity)
+    fun inject(fecilityActivity: FecilityActivity)
 
     @Component.Builder
     interface Builder {

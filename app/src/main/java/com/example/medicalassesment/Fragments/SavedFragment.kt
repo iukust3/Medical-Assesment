@@ -23,12 +23,10 @@ import com.example.medicalassesment.databinding.FragmentSavedBinding
 class SavedFragment : Fragment(),BaseFragment,SwipeRefreshLayout.OnRefreshListener {
     override fun onRefresh() {
         templateActivity.updateTemplete()
-        Log.e("TAG"," Update saved")
 
     }
 
     override fun onTextChange(string: String) {
-        mBinding.swipRefresh.isRefreshing=false
         templateViewModel.filterData("saved", string)
     }
 
@@ -40,9 +38,7 @@ class SavedFragment : Fragment(),BaseFragment,SwipeRefreshLayout.OnRefreshListen
         super.onCreate(savedInstanceState)
     }
     override fun onUpdate() {
-        Log.e("TAG","On Update saved")
 
-        mBinding.swipRefresh.isRefreshing=false
         templateViewModel.filterData("saved", "")
 
     }
@@ -53,8 +49,7 @@ class SavedFragment : Fragment(),BaseFragment,SwipeRefreshLayout.OnRefreshListen
         // Inflate the layout for this fragment
         mBinding =
             DataBindingUtil.inflate(layoutInflater, R.layout.fragment_saved, container, false)
-        mBinding.swipRefresh.setOnRefreshListener(this)
-        return mBinding.root
+       return mBinding.root
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
@@ -62,7 +57,7 @@ class SavedFragment : Fragment(),BaseFragment,SwipeRefreshLayout.OnRefreshListen
         mBinding.recyclerView.layoutManager =
             LinearLayoutManager(context, RecyclerView.VERTICAL, false)
         templateViewModel = ViewModelProviders.of(this)[TemplateViewModel::class.java]
-        templateViewModel.templateModels.observe(this, Observer {
+        templateViewModel.templateModels.observe(viewLifecycleOwner, Observer {
             var inspectinAdapter = InspectionAdapter(it)
             mBinding.recyclerView.adapter = inspectinAdapter
         })

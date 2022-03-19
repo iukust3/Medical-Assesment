@@ -24,4 +24,7 @@ interface BaseQustion {
     fun setQ_Id(string: String);
     fun isUploaded(): Boolean;
     fun setUploaded(uploaded: Boolean);
+    fun setCurrentComment(comment: String?);
+    fun getCurrentComments(): String?;
+
 }

@@ -13,7 +13,6 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.medicalassesment.Activities.OverViewActivity
@@ -33,7 +32,9 @@ import android.graphics.drawable.StateListDrawable
 import androidx.core.content.ContextCompat
 import android.graphics.drawable.DrawableContainer.DrawableContainerState
 import android.widget.EditText
-import com.example.medicalassesment.Helper.ScoreCalcualtor
+import androidx.lifecycle.ViewModelProvider
+import com.example.medicalassesment.Activities.BaseActivity
+import com.example.medicalassesment.Helper.ScoreCalculator
 
 
 /**
@@ -50,7 +51,7 @@ class SurveyFragment() : Fragment(), QustionAdapertInterface {
 
     private lateinit var questionList: ArrayList<QuestionModel>
     public lateinit var BackStateName: String
-    lateinit var fragmentInterction: FragmentInterction
+    lateinit var fragmentInteraction: FragmentInteraction
 
     constructor(list: ArrayList<QuestionModel>, name: String) : this() {
         this.questionList = list;
@@ -70,51 +71,53 @@ class SurveyFragment() : Fragment(), QustionAdapertInterface {
         Log.e("TAG", " " + QuestionViewModel.tamplateID)
         // Inflate the layout for this fragment
         mBinding = DataBindingUtil.inflate(inflater, R.layout.fragment_survay, container, false)
-        questionViewModel = ViewModelProviders.of(
+        questionViewModel = ViewModelProvider(
             this
         )[QuestionViewModel::class.java]
 
         mBinding.recyclerView.layoutManager =
             LinearLayoutManager(context, RecyclerView.VERTICAL, false)
         var removeObserver = false;
-        if (index == 0)
-            questionViewModel.prelimanryInfo.observe(this, Observer {
-                Log.e("TAG", "size " + it.size)
-                if (!removeObserver)
+        when (index) {
+            0 -> questionViewModel.prelimanryInfo.observe(viewLifecycleOwner, Observer {
+                 if (!removeObserver)
                     mBinding.recyclerView.adapter = QustionAdapter(it, index)
                 removeObserver = true
 
-            }) else if (index == 1)
-            questionViewModel.qustions.observe(this, Observer {
+            })
+            1 -> questionViewModel.qustions.observe(viewLifecycleOwner, Observer {
 
-                 if (!removeObserver)
+                if (!removeObserver)
                     mBinding.recyclerView.adapter = QustionAdapter(it, index)
                 removeObserver = true
                 try {
                     GlobalScope.launch {
-                        ScoreCalcualtor.scoreCalcualtor?.calcualteScore(it)
+                        ScoreCalculator.scoreCalculator?.calcualteScore(it)
                     }
                 } catch (ex: java.lang.Exception) {
                     ex.printStackTrace()
                 }
 
-            }) else if (index == 2)
-            questionViewModel.feedback.observe(this, Observer {
-                Log.e("TAG", "size " + it.size)
+            })
+            2 -> questionViewModel.feedback.observe(viewLifecycleOwner, Observer {
                 if (!removeObserver)
                     mBinding.recyclerView.adapter = QustionAdapter(it, index)
                 removeObserver = true
 
             })
+        }
         questionViewModel.insertQustion()
         mBinding.next.setOnClickListener {
             onNext()
+        }
+        mBinding.back.setOnClickListener {
+            fragmentInteraction.onBackClick(index)
         }
         return mBinding.root
     }
 
     override fun onAttach(context: Context) {
-        fragmentInterction = context as FragmentInterction;
+        fragmentInteraction = context as FragmentInteraction;
         super.onAttach(context)
         surveyActivity = context as SurveyActivity
     }
@@ -127,11 +130,12 @@ class SurveyFragment() : Fragment(), QustionAdapertInterface {
                 is Output.Success -> {
                     if (index >= 2) {
                         var intent = Intent(context, OverViewActivity::class.java)
-                        intent.putExtra("TemplateModel", surveyActivity.templateModel)
+                        intent.putExtra("TemplateModel", BaseActivity.templateModel)
                         startActivity(intent)
+                        (requireActivity()).finish()
                     } else {
                         index++;
-                        fragmentInterction.onNextClick(index)
+                        fragmentInteraction.onNextClick(index)
                     }
                 }
                 is Output.Error -> {
@@ -176,7 +180,6 @@ class SurveyFragment() : Fragment(), QustionAdapertInterface {
                             val dcs =
                                 drawable.constantState as DrawableContainerState
                             val drawableItems = dcs.children
-                            Log.e("TAG", "Chiled " + drawableItems.size)
                             val gradientDrawableChecked =
                                 drawableItems[0] as GradientDrawable // item 1
                             gradientDrawableChecked.setStroke(
@@ -198,7 +201,6 @@ class SurveyFragment() : Fragment(), QustionAdapertInterface {
                 is StateListDrawable -> {
                     val dcs = drawable.constantState as DrawableContainerState
                     val drawableItems = dcs.children
-                    Log.e("TAG", "Chiled " + drawableItems.size)
                     val gradientDrawableChecked =
                         drawableItems[0] as GradientDrawable // item 1
                     gradientDrawableChecked.setStroke(2, Color.RED);
@@ -233,7 +235,6 @@ class SurveyFragment() : Fragment(), QustionAdapertInterface {
                                     val dcs =
                                         drawable.constantState as DrawableContainerState
                                     val drawableItems = dcs.children
-                                    Log.e("TAG", "Chiled " + drawableItems.size)
                                     val gradientDrawableChecked =
                                         drawableItems[0] as GradientDrawable // item 1
                                     gradientDrawableChecked.setStroke(
@@ -283,6 +284,6 @@ class SurveyFragment() : Fragment(), QustionAdapertInterface {
     }
 
     override fun processNextClick() {
-        fragmentInterction.onNextClick(index)
+        fragmentInteraction.onNextClick(index)
     }
 }

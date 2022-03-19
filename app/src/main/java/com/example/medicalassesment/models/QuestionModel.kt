@@ -49,7 +49,7 @@ class QuestionModel : BaseQustion {
     @SerializedName("question_id")
     var question_id: String? = null
     @Expose
-    @SerializedName("dealBreaker")
+    @SerializedName("dealbreaker")
     var dealBreaker: String? = null
     @Expose
     @SerializedName("id")
@@ -65,6 +65,14 @@ class QuestionModel : BaseQustion {
 
     override fun setUploaded(uploaded: Boolean) {
         this.isUploaded = uploaded;
+    }
+
+    override fun setCurrentComment(comment: String?) {
+        this.comments=comment
+    }
+
+    override fun getCurrentComments(): String? {
+        return this.comments
     }
 
     @TypeConverters(value = [listToStringConverter::class])

@@ -4,19 +4,21 @@ import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.medicalassesment.database.DatabaseRepository
 import com.example.medicalassesment.MyApplication
 import com.example.medicalassesment.Retrofit.APIinterFace
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 import java.io.File
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Base64
+import com.example.medicalassesment.Helper.PrefHelper
+import com.example.medicalassesment.Retrofit.ApiClient
 import com.example.medicalassesment.Utials.Utils
+import com.example.medicalassesment.database.MedicalDataBase
 import com.example.medicalassesment.models.*
 import com.google.gson.Gson
+import com.google.gson.JsonObject
 import okhttp3.ResponseBody
 import org.json.JSONObject
 import retrofit2.Response
@@ -27,15 +29,14 @@ import java.lang.Exception
 import java.lang.StringBuilder
 
 
-class UploadViewModel @Inject constructor(
-    private val apInterFace: APIinterFace,
-    private val databaseRepository: DatabaseRepository
-) : ViewModel() {
+class UploadViewModel : ViewModel() {
+    private val databaseRepository: MedicalDataBase = MedicalDataBase.getInstance()!!
+    private val apInterFace: APIinterFace =
+        ApiClient.getApiClient().create(APIinterFace::class.java)
     private val inspectionViewState: MutableLiveData<UploadingViewState> = MutableLiveData()
 
-    val coroutineExceptionHandler = CoroutineExceptionHandler { _, exception ->
+    private val coroutineExceptionHandler = CoroutineExceptionHandler { _, exception ->
         onError(exception)
-        Log.e("TAG", "Error " + exception.message)
         exception.printStackTrace()
     }
 
@@ -46,7 +47,6 @@ class UploadViewModel @Inject constructor(
 
     fun startUpload(templateModel: TemplateModel) {
         viewModelScope.launch(coroutineExceptionHandler) {
-            Log.e("TAG", " uploading start ")
             uploadTemplete(templateModel)
         }
     }
@@ -56,26 +56,30 @@ class UploadViewModel @Inject constructor(
         var hashMap = LinkedHashMap<String, String>()
         hashMap["user_profile_id"] = MyApplication.USER.id.toString()
         hashMap["description"] = templateModel.description.toString()
-        hashMap.put("template_id", templateModel.templateId.toString())
-        hashMap.put(
-            "inspection_date",
+        hashMap["template_id"] = templateModel.templateId.toString()
+        hashMap["inspection_date"] =
             Utils.getFormattedDateSimple(Utils.getFormattedDateSimple(templateModel.inspectionConductedOn.toString()))
-        )
-        hashMap.put("title", templateModel.title.toString())
-        hashMap.put("status", templateModel.status.toString())
-        hashMap.put("inspection_conducted_by", templateModel.inspectionConductedBy.toString())
-        hashMap.put("inspection_conducted_at", templateModel.inspectionConductedAt.toString())
-        hashMap.put("category", "1")
-        var respos = apInterFace.upladTemplete(hashMap)
+        hashMap["title"] = templateModel.title.toString()
+        hashMap["status"] = templateModel.status.toString()
+        hashMap["inspection_conducted_by"] = templateModel.inspectionConductedBy.toString()
+        if (templateModel.inspectionConductedAt.isNullOrEmpty() || templateModel.inspectionConductedAt?.length == 0) {
+            hashMap["inspection_conducted_at"] = "2020-07-05"
+            Log.e("TAG", "inspection_conducted_at 2020-07-05 ")
+        } else
+            hashMap["inspection_conducted_at"] = templateModel.inspectionConductedAt.toString()
+        hashMap["category"] = "1"
+        hashMap["duration"] =
+            PrefHelper(MyApplication.APPLICATION).getTime(templateModel.title.toString())
+        var respos = apInterFace.insertTemplete(hashMap)
         var responseMsg = respos.body()?.string()
-        if (respos.isSuccessful) {
+        if (respos.isSuccessful && respos.code() != 500) {
             try {
-                var element = Gson().toJsonTree(responseMsg)
+                Gson().toJsonTree(responseMsg)
                 templateID = JSONObject(responseMsg).getInt("template_id")
-                inspectionViewState.value = Uploading("Uploading Preliminary Info")
-                uploadPrelemanryInfo(templateModel)
+                inspectionViewState.postValue(Uploading("Uploading Preliminary Info"))
+                uploadPreliminaryInfo(templateModel)
                 templateModel.templateId = templateID
-                databaseRepository.medicalDataBase.getDao().update(templateModel)
+                databaseRepository.getDao().update(templateModel)
                 inspectionViewState.value = UploadingDone(templateModel)
 
             } catch (e: Exception) {
@@ -100,15 +104,15 @@ class UploadViewModel @Inject constructor(
         return Bitmap.createScaledBitmap(image, width, height, true)
     }
 
-    private suspend fun uploadPrelemanryInfo(templateModel: TemplateModel) {
-        val list = databaseRepository.medicalDataBase.getDao()
+    private suspend fun uploadPreliminaryInfo(templateModel: TemplateModel) {
+        val list = databaseRepository.getDao()
             .getPrelimanryInfoNonlive(templateModel.id.toString())
         list.forEach {
             var base64String = StringBuilder("")
             it.imageUris?.let { _ ->
                 var file = File(
                     Utils.getFolderPath(
-                        databaseRepository.application,
+                        MyApplication.APPLICATION,
                         it.getId(),
                         it.template_id
                     )
@@ -125,32 +129,40 @@ class UploadViewModel @Inject constructor(
             if (!it.isUploaded())
                 startUpload(base64String, it)
         }
-        uploadQustion(templateModel)
+        uploadQuestion(templateModel)
     }
 
-    private suspend fun uploadQustion(templateModel: TemplateModel) {
-        val list = databaseRepository.medicalDataBase.getDao()
+    private suspend fun uploadQuestion(templateModel: TemplateModel) {
+        val list = databaseRepository.getDao()
             .getQuestionsNonlive(templateModel.id.toString())
-
+        Log.e("TAG", "qustion size ${list.size}")
         list.forEach {
             var base64String = StringBuilder("")
-            it.imageUris?.let { _ ->
-                try {
-                    var file = File(
-                        Utils.getFolderPath(
-                            databaseRepository.application,
-                            it.getId(),
-                            it.template_id
+            if (!it.imageUris.isNullOrEmpty())
+                it.imageUris?.let { _ ->
+                    try {
+                        var file = File(
+                            Utils.getFolderPath(
+                                MyApplication.APPLICATION,
+                                it.getId(),
+                                it.template_id
+                            )
                         )
-                    )
-                    file.listFiles().forEach { file1 ->
-                        if (base64String.isNotEmpty()) {
-                            base64String.append(" , " + convertImageToString(file1))
-                        } else base64String.append(convertImageToString(file1))
+                        var listofImages=file.listFiles { file, s ->
+                            run {
+                                var nameSplit = s.split("_")
+                                nameSplit.size == 3
+                            }
+                        }
+                        listofImages.forEach { file1 ->
+                            if (base64String.isNotEmpty()) {
+                                base64String.append(" , " + convertImageToString(file1))
+                            } else base64String.append(convertImageToString(file1))
+                        }
+                    } catch (e: Exception) {
+
                     }
-                } catch (e: Exception) {
                 }
-            }
             if (!it.isUploaded())
                 startUpload(base64String, it)
         }
@@ -158,7 +170,7 @@ class UploadViewModel @Inject constructor(
     }
 
     private suspend fun uploadFeedBack(templateModel: TemplateModel) {
-        val list = databaseRepository.medicalDataBase.getDao()
+        val list = databaseRepository.getDao()
             .getFeedBackNonlive(templateModel.id.toString())
         list.forEach {
             var base64String = StringBuilder("")
@@ -167,7 +179,7 @@ class UploadViewModel @Inject constructor(
                     if (it1.size > 0) {
                         val file = File(
                             Utils.getFolderPath(
-                                databaseRepository.application,
+                                MyApplication.APPLICATION,
                                 it.getId(),
                                 it.template_id
                             )
@@ -186,6 +198,7 @@ class UploadViewModel @Inject constructor(
         }
 
     }
+
     private suspend fun convertImageToString(file: File): String {
         Log.e("TAG", " path " + file.absolutePath)
         var value = ""
@@ -214,27 +227,33 @@ class UploadViewModel @Inject constructor(
         if (questionModel.getAnswer() == "null") {
             questionModel.setAnswer("")
         }
+        Log.e("TAG","Base Qustion type "+questionModel.baseQustionType)
         var map = LinkedHashMap<String, String>()
-        when {
-            questionModel.baseQustionType == 1 -> map["question_id"] =
-                questionModel.getQ_Id().toString()
-            questionModel.baseQustionType == 2 -> map["fbs_id"] = questionModel.getQ_Id().toString()
+        when (questionModel.baseQustionType) {
+            1 -> {
+                map["question_id"] = questionModel.getQ_Id().toString()
+                Log.e("TAG", "Qustion id ${questionModel.getQ_Id().toString()}")
+            }
+            2 -> map["fbs_id"] = questionModel.getQ_Id().toString()
             else -> map["pl_id"] = questionModel.getQ_Id().toString()
         }
         map["answer"] = questionModel.getAnswer().toString()
         map["image"] = image.toString()
         map["template_id"] = templateID.toString()
         var response: Response<ResponseBody>? = null
-        when {
-            questionModel.baseQustionType == 1 ->
-                response = apInterFace.uploadQustions(map)
-            questionModel.baseQustionType == 2 -> response = apInterFace.uploadFeedBack(map)
-            else -> response = apInterFace.uploadPrelemryInfo(map)
+
+        response = when (questionModel.baseQustionType) {
+            1 -> {
+                map["comment"] = (questionModel as QuestionModel).comments.toString()
+                apInterFace.uploadQustions(map)
+            }
+            2 -> apInterFace.uploadFeedBack(map)
+            else -> apInterFace.uploadPrelemryInfo(map)
         }
-        when {
-            questionModel.baseQustionType == 1 -> inspectionViewState.value =
+        when (questionModel.baseQustionType) {
+            1 -> inspectionViewState.value =
                 Uploading("Uploading Question")
-            questionModel.baseQustionType == 2 -> inspectionViewState.value =
+            2 -> inspectionViewState.value =
                 Uploading("Uploading Feedback Summary")
             else -> inspectionViewState.value = Uploading("Uploading Preliminary Info")
         }
@@ -242,19 +261,26 @@ class UploadViewModel @Inject constructor(
 
         if (response.code() == 500) {
             Log.e("TAG", "Qustion " + Gson().toJson(questionModel))
-            Log.e("TAG", "map " + map.toString())
+            Log.e("TAG", "map $map")
         } else if (response.code() == 200) {
-            questionModel.setUploaded(true)
-            when {
-                questionModel.baseQustionType == 1 -> {
-                    databaseRepository.medicalDataBase.getDao()
+            var jsonResponse = JSONObject(response.body()?.string())
+            Log.e("TAG", "Qustion " + response.message())
+            Log.e("TAG", "Qustion " + response.code())
+            Log.e("TAG", "map $map")
+            if (jsonResponse.getString("msg") == "Inserted Successfully")
+                questionModel.setUploaded(true)
+            else Log.e("TAG","Error while inserting question ${Gson().toJson(questionModel)}")
+            when (questionModel.baseQustionType) {
+                1 -> {
+                    databaseRepository.getDao()
                         .update(questionModel as QuestionModel)
                 }
-                questionModel.baseQustionType == 2 -> databaseRepository.medicalDataBase.getDao().update(
-                    questionModel as FeedBackModel
-                )
-                else -> databaseRepository.medicalDataBase.getDao().update(questionModel as PreliminaryInfoModel)
-
+                2 -> databaseRepository.getDao()
+                    .update(
+                        questionModel as FeedBackModel
+                    )
+                else -> databaseRepository.getDao()
+                    .update(questionModel as PreliminaryInfoModel)
             }
         }
     }
@@ -299,7 +325,7 @@ class UploadViewModel @Inject constructor(
             file.createNewFile();
             var outputStream = FileOutputStream(file);
 
-            selectedBitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
+            selectedBitmap?.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
 
             return file;
         } catch (e: Exception) {

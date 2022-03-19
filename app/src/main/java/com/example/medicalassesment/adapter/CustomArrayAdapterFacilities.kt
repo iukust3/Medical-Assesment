@@ -8,7 +8,7 @@ import android.widget.ArrayAdapter
 import android.widget.TextView
 import com.example.medicalassesment.models.Facility
 
-class CustomArrayAdpaterFecilities(context: Context, var resource: Int, var fecilities: Array<Facility>) :
+class CustomArrayAdapterFacilities(context: Context, var resource: Int, var fecilities: Array<Facility>) :
     ArrayAdapter<Facility>(context, resource, fecilities) {
 
     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {

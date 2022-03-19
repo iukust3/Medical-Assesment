@@ -30,10 +30,6 @@ abstract class ViewModelModule {
     @ViewModelKey(InspectionViewModel::class)
     abstract fun bindInspectionViewModel(showsViewModel: InspectionViewModel): ViewModel
 
-    @Binds
-    @IntoMap
-    @ViewModelKey(UploadViewModel::class)
-    abstract fun bindUploadViewModel(uploadViewModel: UploadViewModel): ViewModel
 
     /* @Binds
      @IntoMap

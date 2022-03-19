@@ -37,8 +37,7 @@ class QustionAdapter() : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         this.mContext = parent.context
         val layoutInflater = LayoutInflater.from(mContext);
-        Log.e("TAG", "Item View Type $viewType")
-        if (viewType == 13) {
+       if (viewType == 13) {
             return HeaderViewHolder(layoutInflater.inflate(R.layout.preview_header, parent, false))
 
         }
@@ -58,7 +57,6 @@ class QustionAdapter() : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             ?: "1" })
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        Log.e("TAG", "type ${qustionList[position].getQuestionTypeId()}")
         if (qustionList[position].getQuestionTypeId() == Constant.QUSTION_TYPE_SECTIONTITTLE) {
             val viewHolder = holder as HeaderViewHolder;
             viewHolder.title.text = qustionList[position].getTittle()

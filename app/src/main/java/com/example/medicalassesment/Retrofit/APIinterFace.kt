@@ -9,7 +9,7 @@ import retrofit2.Response
 import retrofit2.http.*
 
 interface APIinterFace {
-    @GET("userprofile")
+    @POST("userprofile")
     suspend fun Login(
         @Query("email", encoded = true) userName: String, @Query(
             "password",
@@ -25,7 +25,7 @@ interface APIinterFace {
 
     @FormUrlEncoded
     @POST("savedtemplate")
-    suspend fun upladTemplete(@FieldMap(encoded = true) url: HashMap<String, String>): Response<ResponseBody>
+    suspend fun insertTemplete(@FieldMap(encoded = true) url: HashMap<String, String>): Response<ResponseBody>
 
 
     @POST("savequestion")

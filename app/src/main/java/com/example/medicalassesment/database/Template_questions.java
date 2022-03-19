@@ -19,7 +19,7 @@ public class Template_questions {
     @Expose
     @SerializedName("templateQuestions")
     private java.util.List<QuestionModel> templateQuestions;
-
+    private List<PreliminaryInfoModel> defultPreliminaryInfo;
     public List<PreliminaryInfoModel> getTemplatePreliminaryinfo() {
         return TemplatePreliminaryinfo;
     }
@@ -45,4 +45,11 @@ public class Template_questions {
     }
 
 
+    public List<PreliminaryInfoModel> getDefultPreliminaryInfo() {
+        return defultPreliminaryInfo;
+    }
+
+    public void setDefultPreliminaryInfo(List<PreliminaryInfoModel> defultPreliminaryInfo) {
+        this.defultPreliminaryInfo = defultPreliminaryInfo;
+    }
 }

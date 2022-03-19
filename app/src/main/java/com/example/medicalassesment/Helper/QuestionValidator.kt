@@ -12,21 +12,35 @@ class QuestionValidator(
     private val templateId: Int,
     val index: Int
 ) {
+    private var list: List<BaseQustion>? = null
+
+    constructor(
+        context: Context,
+        templateId: Int,
+        index: Int,
+        list: List<BaseQustion>
+    ) : this(context, templateId, index) {
+        this.list = list
+    }
 
     suspend fun validateQuestions(): Output {
-        val list: List<BaseQustion> = when (index) {
-            -1 -> MedicalDataBase.getInstance(context).getDao()
-                .getDefaultInfo(templateId.toString())
-            0 -> MedicalDataBase.getInstance(context).getDao()
-                .getPrelimanryInfoNonDefult(templateId.toString())
-            1 -> MedicalDataBase.getInstance(context).getDao()
-                .getQuestionsNonlive(templateId.toString())
-            else -> MedicalDataBase.getInstance(context).getDao()
-                .getQuestionsNonlive(templateId.toString())
+        val list: List<BaseQustion> = if (!list.isNullOrEmpty()) {
+            list!!
+        } else {
+            when (index) {
+                -1 -> MedicalDataBase.getInstance(context).getDao()
+                    .getDefaultInfo(templateId.toString())
+                0 -> MedicalDataBase.getInstance(context).getDao()
+                    .getPrelimanryInfoNonDefult(templateId.toString())
+                1 -> MedicalDataBase.getInstance(context).getDao()
+                    .getQuestionsNonlive(templateId.toString())
+                else -> MedicalDataBase.getInstance(context).getDao()
+                    .getFeedBackNonlive(templateId.toString())
+            }
         }
         list.forEach {
             when (it.getQuestionTypeId()) {
-                Constant.QUSTION_TYPE_SECTIONTITTLE,Constant.QUSTION_TYPE_PROXIMITY-> {
+                Constant.QUSTION_TYPE_SECTIONTITTLE, Constant.QUSTION_TYPE_PROXIMITY -> {
                 }
                 Constant.QUSTION_TYPE_SIGNATURE -> {
                     if (it.getPriority() == "1")
@@ -35,7 +49,10 @@ class QuestionValidator(
                         }
                 }
                 Constant.QUSTION_TYPE_EMAIL -> {
-                    if (it.getAnswer().isNullOrEmpty() || !Patterns.EMAIL_ADDRESS.matcher(it.getAnswer()).matches()) {
+                    if (it.getAnswer()
+                            .isNullOrEmpty() || !Patterns.EMAIL_ADDRESS.matcher(it.getAnswer())
+                            .matches()
+                    ) {
                         return Output.Error(list.indexOf(it))
                     }
                 }

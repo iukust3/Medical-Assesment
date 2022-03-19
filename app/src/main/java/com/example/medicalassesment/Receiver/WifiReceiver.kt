@@ -17,8 +17,7 @@ class WifiReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val string = Gson().toJson(intent.extras!!.keySet())
         Log.e("TAG", "extra $string")
-        val info = intent.getParcelableExtra<NetworkInfo>(WifiManager.EXTRA_NETWORK_INFO)
-       /* if (info != null && info.isConnected) {
+        if (Utils.isOnline(context)) {
             if (!Utils.isMyServiceRunning(UploadingService::class.java, context)) {
                 ContextCompat.startForegroundService(
                     context,
@@ -26,11 +25,9 @@ class WifiReceiver : BroadcastReceiver() {
                 )
             }
         } else {
-            if (UploadingService.INSTANCE != null) {
+           /* if (UploadingService.INSTANCE != null) {
                 UploadingService.INSTANCE?.stopUploading()
-            }
-            // UploadingService uploadVideo=UploadingService.getInstance(context);
-            //   uploadVideo.stopUploading();
-        }*/
+            }*/
+        }
     }
 }

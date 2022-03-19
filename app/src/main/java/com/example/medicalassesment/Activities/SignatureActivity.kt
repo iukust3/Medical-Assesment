@@ -16,6 +16,7 @@ import android.view.PixelCopy.*
 import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.view.drawToBitmap
 import androidx.databinding.DataBindingUtil
 import com.example.medicalassesment.R
 import com.example.medicalassesment.Utials.Utils
@@ -26,15 +27,14 @@ import java.lang.Exception
 
 class SignatureActivity : AppCompatActivity() {
     private lateinit var mBinding: ActivitySignatureBinding
+
     @SuppressLint("CheckResult")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         mBinding = DataBindingUtil.setContentView(this, R.layout.activity_signature)
         setSupportActionBar(mBinding.toolbar)
-        var q_id=intent.getIntExtra("QuestionID",-1);
-        var templateId=intent.getStringExtra("TemplateID")
-        Log.e("TAG","Q_id "+q_id)
-        Log.e("TAG","templete ID "+templateId)
+        var q_id = intent.getIntExtra("QuestionID", -1);
+        var templateId = intent.getStringExtra("TemplateID")
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         if (Build.VERSION.SDK_INT >= 23) {
             if (ContextCompat.checkSelfPermission(
@@ -63,48 +63,18 @@ class SignatureActivity : AppCompatActivity() {
 
         mBinding.save.setOnClickListener {
             var newIntent = Intent()
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-                convertViewToDrawable {
-                    var file:File?=null
-                    file = if (path.isNullOrEmpty())
-                        Utils.createImageFile(this,q_id,templateId)
-                    else File(path)
-                     try {
-                        file?.delete()
-                        if (!File(path).exists())
-                            File(path).mkdir()
-                        if (!file?.exists()!!) {
-                            file.createNewFile();
-                        }
-                        var ostream = FileOutputStream(file);
-                        it.compress(Bitmap.CompressFormat.PNG, 10, ostream);
-                        ostream.close();
-                        intent.putExtra("Image", file.absolutePath)
-                        SurveyActivity.file = file
-                        /* QuestionTypeSignatureHandler.imageView.setImageBitmap(it)
-                         QuestionTypeSignatureHandler.questionModel.imageUris = ArrayList()
-                         QuestionTypeSignatureHandler.questionModel.imageUris?.add(file.absolutePath)
-                  */
-                    } catch (e: Exception) {
-                        e.printStackTrace();
-                    } finally {
-                        setResult(Activity.RESULT_OK, newIntent)
-                        finish()
-                    }
-                }
-            } else {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 getBitmapFromView {
-                    var file:File?=null
+                    var file: File? = null
                     file = if (path.isNullOrEmpty())
-                        Utils.createImageFile(this,q_id,templateId)
+                        Utils.createImageFile(this, q_id, templateId)
                     else File(path)
                     try {
-                        file?.delete()
-                        if (!File(path).exists())
-                            File(path).mkdir()
-                        if (!file?.exists()!!) {
-                            file?.createNewFile();
+                        try {
+                            file?.delete()
+                        } catch (e: Exception) {
                         }
+                        file=   Utils.createImageFile(this, q_id, templateId)
                         var ostream = FileOutputStream(file);
                         it.compress(Bitmap.CompressFormat.PNG, 10, ostream);
                         ostream.close();
@@ -119,6 +89,41 @@ class SignatureActivity : AppCompatActivity() {
                         finish()
                     }
                 }
+            } else {
+                try {
+                    convertViewToDrawable {
+                        var file: File? = null
+
+                        file = if (path.isNullOrEmpty())
+                            Utils.createImageFile(this, q_id, templateId)
+                        else File(path)
+                        try {
+                            try {
+                                file?.delete()
+                            } catch (e: Exception) {
+                            }
+                            file=   Utils.createImageFile(this, q_id, templateId)
+                            var ostream = FileOutputStream(file);
+                            it.compress(Bitmap.CompressFormat.PNG, 10, ostream);
+                            ostream.close();
+                            intent.putExtra("Image", file?.absolutePath)
+                            if (file != null) {
+                                SurveyActivity.file = file as File
+                            }
+                            /* QuestionTypeSignatureHandler.imageView.setImageBitmap(it)
+                                     QuestionTypeSignatureHandler.questionModel.imageUris = ArrayList()
+                                     QuestionTypeSignatureHandler.questionModel.imageUris?.add(file.absolutePath)
+                              */
+                        } catch (e: Exception) {
+                            e.printStackTrace();
+                        } finally {
+                            setResult(Activity.RESULT_OK, newIntent)
+                            finish()
+                        }
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
             }
         }
         mBinding.clear.setOnClickListener {
@@ -126,7 +131,6 @@ class SignatureActivity : AppCompatActivity() {
             mBinding.drawingView.invalidate()
             mBinding.drawingView.setBackgroundResource(R.color.white)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-
                 mBinding.drawingView.background =
                     ColorDrawable(ContextCompat.getColor(this, R.color.white))
             }
@@ -144,15 +148,17 @@ class SignatureActivity : AppCompatActivity() {
             (-mBinding.drawingView.scrollY).toFloat()
         )
         mBinding.drawingView.draw(c)
-        callback(getResizedBitmap(b,500))
+        callback(getResizedBitmap(b, 500))
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun getBitmapFromView(callback: (Bitmap) -> Unit) {
-        window?.let { window ->
+     var bitmap=   mBinding.drawingView.drawToBitmap()
+        callback(getResizedBitmap(bitmap, 500))
+      /*  window?.let { window ->
             val bitmap = Bitmap.createBitmap(
                 mBinding.drawingView.width,
-                  mBinding.drawingView.height,
+                mBinding.drawingView.height,
                 Bitmap.Config.ARGB_8888
             )
             val locationOfViewInWindow = IntArray(2)
@@ -169,7 +175,7 @@ class SignatureActivity : AppCompatActivity() {
                     bitmap,
                     { copyResult ->
                         if (copyResult == SUCCESS) {
-                            callback(getResizedBitmap(bitmap,500))
+                            callback(getResizedBitmap(bitmap, 500))
                         }
                         // possible to handle other result codes ...
                     },
@@ -179,7 +185,7 @@ class SignatureActivity : AppCompatActivity() {
                 // PixelCopy may throw IllegalArgumentException, make sure to handle it
                 e.printStackTrace()
             }
-        }
+        }*/
     }
 
     private fun getResizedBitmap(image: Bitmap, maxSize: Int): Bitmap {

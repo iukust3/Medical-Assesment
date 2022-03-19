@@ -29,78 +29,96 @@ class SurveyViewModel @Inject constructor(
             onError(exception)
         }
         viewModelScope.launch(coroutineExceptionHandler) {
-            var templateModelnew = TemplateModel()
-            templateModelnew = templateModel;
-            templateModelnew.status = "InProgress"
-            templateModelnew.title =
-                Utils.getFormattedDateSimple() + "/" + MyApplication.USER.firstname + " " + MyApplication.USER.surname
-            templateModelnew.description = templateModel.title
-            templateModelnew.templateId = templateModel.templateId
-            templateModelnew.id = databaseRepository.medicalDataBase
-                .getDao().insertTamplate(templateModelnew).toInt()
             var templateQuestions: Template_questions? = null
-
             if (prefHelper.getTempleteData(templateModel.title!!) == "{}") {
                 var value =
-                    apInterFace.getQuestionsForTamplete("templatedata/" + templateModelnew.templateId)
+                    apInterFace.getQuestionsForTamplete("templatedata/" + templateModel.templateId)
                 templateQuestions = value.body();
                 prefHelper.setTempleteData(templateModel.title!!, Gson().toJson(templateQuestions))
             } else {
-               templateQuestions = Gson().fromJson<Template_questions>(
+                templateQuestions = Gson().fromJson<Template_questions>(
                     prefHelper.getTempleteData(templateModel.title!!),
                     Template_questions::class.java
                 );
+
             }
+            templateModel.description = templateModel.title
             try {
-                templateQuestions?.templateQuestions?.let { it ->
-                    it.forEach {
-                        it.template_id = "${templateModelnew.id}"
-                        //it.type = Constant.QUESTION_TYPE_YESNO
-                    }
-                    databaseRepository.medicalDataBase.getDao().insertQustions(
-                        it
-                    )
-                }
-                templateQuestions?.tempalteFeedbacks?.let { it1 ->
-                    it1.forEach {
-                        it.template_id = "${templateModelnew.id}"
-                    }
-                    databaseRepository.medicalDataBase.getDao().insertFeedBack(
-                        it1
-                    )
-                }
-                var list = Constant.getDefaultQuestions(templateModelnew)
-                list.forEach {
-                    it.template_id = "${templateModelnew.id}"
-                }
-                databaseRepository.medicalDataBase.getDao().insertPreliminaryInfo(
-                    list
-                )
-                templateQuestions?.templatePreliminaryinfo?.toList()?.let { it1 ->
-                    it1.forEach {
-
-                        it.template_id = "${templateModelnew.id}"
-                    }
-                    databaseRepository.medicalDataBase.getDao().insertPreliminaryInfo(
-                        it1
-                    )
-                }
-
+                val list = Constant.getDefaultQuestions(templateModel)
+                templateQuestions?.defultPreliminaryInfo = list
             } catch (e: Exception) {
                 e.printStackTrace()
             }
-            success(templateModelnew)
+            success(templateModel, templateQuestions)
         }
     }
 
-    private fun success(templateModel: TemplateModel) {
-        surveyViewStateLiveData.value =
-            Success(templateModel)
+    suspend fun insertData(templateQuestions: Template_questions, templateModel: TemplateModel) {
+
+        templateModel.status = "InProgress"
+        /* //  templateModelnew = templateModel;
+         templateModelnew.type = templateModel.type
+         templateModelnew.category = templateModel.category
+         templateModelnew.title =templateModel.title
+         templateModelnew.description = templateModel.description
+         templateModelnew.templateId = templateModel.templateId
+        */
+         var templateModelnew = templateModel;
+        templateModelnew.id = 0
+        templateModel.id = databaseRepository.medicalDataBase
+            .getDao().insertTamplate(templateModelnew).toInt()
+
+        val file =
+            Utils.getFolderPath(MyApplication.APPLICATION, templateModel.id.toString())
+        if (file.exists()) {
+            file.delete()
+        }
+        try {
+            templateQuestions?.templateQuestions?.let { it ->
+                it.forEach {
+                    it.template_id = "${templateModel.id}"
+                }
+                databaseRepository.medicalDataBase.getDao().insertQustions(
+                    it
+                )
+            }
+            templateQuestions.tempalteFeedbacks?.let { it1 ->
+                it1.forEach {
+                    it.template_id = "${templateModel.id}"
+                }
+                databaseRepository.medicalDataBase.getDao().insertFeedBack(
+                    it1
+                )
+            }
+            templateQuestions.defultPreliminaryInfo.forEach {
+                it.template_id = "${templateModel.id}"
+            }
+            databaseRepository.medicalDataBase.getDao().insertPreliminaryInfo(
+                templateQuestions.defultPreliminaryInfo
+            )
+            templateQuestions.templatePreliminaryinfo?.toList()?.let { it1 ->
+                it1.forEach {
+                    it.template_id = "${templateModel.id}"
+                }
+                databaseRepository.medicalDataBase.getDao().insertPreliminaryInfo(
+                    it1
+                )
+            }
+            success(templateModel, templateQuestions)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            onError(e)
+        }
+    }
+
+    private fun success(templateModel: TemplateModel, templateQuestions: Template_questions?) {
+        surveyViewStateLiveData.postValue(
+            templateQuestions?.let { Success(templateModel, it) })
     }
 
     private fun onError(exception: Throwable) {
         Log.e("TAG", "Error " + exception.message)
-        surveyViewStateLiveData.value = NetworkError(exception.message)
+        surveyViewStateLiveData.postValue(NetworkError(exception.message))
         exception.printStackTrace()
     }
 

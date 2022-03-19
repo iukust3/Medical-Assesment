@@ -8,10 +8,10 @@
 
 
     <LinearLayout
+        android:id="@+id/main_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="10dp"
-        android:id="@+id/main_layout"
         android:background="@drawable/preview_itm_bg"
         android:orientation="vertical">
 
@@ -74,8 +74,13 @@
                 <LinearLayout
                     android:id="@+id/yesNoLayout"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content">
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
 
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content">
 
                         <androidx.appcompat.widget.AppCompatRadioButton
                             android:id="@+id/radio_yes"
@@ -93,7 +98,16 @@
                             android:text="N"
                             android:textStyle="bold"
                             app:buttonTint="@color/red_800" />
-                  </LinearLayout>
+                    </LinearLayout>
+                    <androidx.appcompat.widget.AppCompatRadioButton
+                        android:id="@+id/radio_NA"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="NA"
+                        android:layout_marginTop="5dp"
+                        android:textStyle="bold"/>
+
+                </LinearLayout>
 
                 <ImageView
                     android:id="@+id/takeImage"

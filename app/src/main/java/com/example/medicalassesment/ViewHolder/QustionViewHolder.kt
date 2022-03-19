@@ -3,6 +3,7 @@ package com.example.medicalassesment.ViewHolder
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
+import android.content.DialogInterface
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.BitmapFactory
@@ -10,6 +11,7 @@ import android.graphics.drawable.ColorDrawable
 import android.text.Editable
 import android.text.InputType
 import android.text.TextWatcher
+import android.util.Log
 import android.util.Patterns
 import android.view.View.*
 import android.view.WindowManager
@@ -28,11 +30,15 @@ import com.example.medicalassesment.Utials.Constant.Companion.QUESTION_TYPE_YESN
 import com.example.medicalassesment.databinding.NewItemLayoutBinding
 import android.view.ViewGroup.MarginLayoutParams
 import android.view.inputmethod.EditorInfo
+import androidx.appcompat.widget.AppCompatRadioButton
 import androidx.core.content.ContextCompat
+import androidx.core.widget.CompoundButtonCompat
+import androidx.core.widget.doOnTextChanged
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.signature.ObjectKey
+import com.example.medicalassesment.Activities.BaseActivity
 import com.example.medicalassesment.Activities.SignatureActivity
 import com.example.medicalassesment.adapter.QustionAdapter
 import com.example.medicalassesment.database.Dao
@@ -41,9 +47,13 @@ import com.example.medicalassesment.R
 import com.example.medicalassesment.Utials.Constant
 import com.example.medicalassesment.Utials.Constant.Companion.QUSTION_TYPE_DATEFUTURE
 import com.example.medicalassesment.Utials.Constant.Companion.QUSTION_TYPE_DATEPAST
+import com.example.medicalassesment.Utials.Constant.Companion.QUSTION_TYPE_MULTICHICE
+import com.example.medicalassesment.Utials.Constant.Companion.QUSTION_TYPE_SECTIONTITTLE
 import com.example.medicalassesment.Utials.Constant.Companion.QUSTION_TYPE_SIGNATURE
 import com.example.medicalassesment.Utials.Utils
 import com.example.medicalassesment.models.*
+import com.example.medicalassesment.uIItems.BaseImageView
+import com.google.gson.Gson
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.util.*
@@ -54,18 +64,18 @@ class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
     private val dao: Dao
 
     companion object {
-        lateinit var previousLayout: LinearLayout;
+        lateinit var previousLayout: LinearLayout
         lateinit var mQustionViewHolderInterface: QustionViewHolderInterface
         fun getQustionInterface(): QustionViewHolderInterface {
-            return mQustionViewHolderInterface;
+            return mQustionViewHolderInterface
         }
     }
 
-    private var binding: NewItemLayoutBinding;
-    private var context: Context;
+    private var binding: NewItemLayoutBinding
+    private var context: Context
     private lateinit var mBaseQustion: BaseQustion
     private val qustionAdapter: QustionAdapter
-    private var index = 0;
+    private var index = 0
     lateinit var redcolor: ColorStateList
     lateinit var greencolor: ColorStateList
     private lateinit var templateModel: TemplateModel
@@ -78,7 +88,7 @@ class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
         mQustionViewHolderInterface = this
         this.binding = view
         this.context = view.root.context
-        this.templateModel = (context as SurveyActivity).templateModel
+        this.templateModel = BaseActivity.templateModel
         this.qustionAdapter = qustionAdapter
         redcolor = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.red_800))
         greencolor = ColorStateList.valueOf(ContextCompat.getColor(context, R.color.green_600))
@@ -89,16 +99,21 @@ class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
         index: Int
     ) {
 
-        this.index = index;
-        this.mBaseQustion = questionModel;
+        this.index = index
+        this.mBaseQustion = questionModel
         binding.guidLine.text = mBaseQustion.getGuideline()
         binding.qustionTittle.text = mBaseQustion.getTittle()
-        if (mBaseQustion.getGuideline() == null) {
-            binding.guidLine.visibility = GONE
-            binding.etqustion.hint = mBaseQustion.getSubTittle()
-        } else {
-            binding.guidLine.visibility = VISIBLE
-            binding.etqustion.hint = mBaseQustion.getTittle()
+        if (mBaseQustion.getQuestionTypeId() != QUESTION_TYPE_YESNO &&
+            mBaseQustion.getQuestionTypeId() != QUESTION_TYPE_YESNO_WITH_COMMENT
+        ) {
+
+            if (mBaseQustion.getGuideline() == null) {
+                binding.guidLine.visibility = GONE
+                binding.etqustion.hint = mBaseQustion.getSubTittle()
+            } else {
+                binding.guidLine.visibility = VISIBLE
+                binding.etqustion.hint = mBaseQustion.getTittle()
+            }
         }
         binding.dateTime.visibility = GONE
         binding.etqustion.visibility = GONE
@@ -111,54 +126,64 @@ class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
         } else binding.takeImage.visibility = VISIBLE
 
         binding.takeImage.setImageResource(R.drawable.ic_camera)
-        if (mBaseQustion.getAnswer().isNullOrEmpty())
-            binding.etqustion.setText("")
-        else binding.etqustion.setText(mBaseQustion.getAnswer())
-        binding.etqustion.error = null
-        binding.etqustion.addTextChangedListener(object : TextWatcher {
-            override fun afterTextChanged(s: Editable?) {
-                mBaseQustion.setAnswer(s.toString())
-                qustionAdapter.updateItem(mBaseQustion, adapterPosition)
-                if (questionModel.getQuestionTypeId() == QUSTION_TYPE_EMAIL) {
-                    if (!s.isNullOrEmpty()) {
-                        if (!Patterns.EMAIL_ADDRESS.matcher(s).matches()) {
-                            binding.etqustion.error = "Please enter valid email address"
-                            binding.etqustion.requestFocus()
-                        } else {
-                            binding.etqustion.error = null
-                            update()
-                        }
-                    }
-                } else if (questionModel.getQuestionTypeId() == QUSTION_TYPE_PHONE) {
-                    if (s != null)
+        if (mBaseQustion.getQuestionTypeId() != QUESTION_TYPE_YESNO &&
+            mBaseQustion.getQuestionTypeId() != QUESTION_TYPE_YESNO_WITH_COMMENT
+        ) {
+            if (mBaseQustion.getAnswer().isNullOrEmpty())
+                binding.etqustion.setText("")
+            else binding.etqustion.setText(mBaseQustion.getAnswer().toString())
+            binding.etqustion.error = null
+            var qustionTextWatcher = object : TextWatcher {
+                override fun afterTextChanged(s: Editable?) {
+                    mBaseQustion.setAnswer(s.toString())
+                    qustionAdapter.updateItem(mBaseQustion, adapterPosition)
+                    if (questionModel.getQuestionTypeId() == QUSTION_TYPE_EMAIL) {
                         if (!s.isNullOrEmpty()) {
-                            if (s.length < 11 || s.length > 11) {
-                                binding.etqustion.error = "Please enter valid phone number"
+                            if (!Patterns.EMAIL_ADDRESS.matcher(s).matches()) {
+                                binding.etqustion.error = "Please enter valid email address"
                                 binding.etqustion.requestFocus()
                             } else {
                                 binding.etqustion.error = null
                                 update()
                             }
                         }
-                } else {
-                    GlobalScope.launch {
-                        if (index == 0)
-                            dao.update(mBaseQustion as PreliminaryInfoModel)
-                        if (index == 1)
-                            dao.update(mBaseQustion as QuestionModel)
-                        if (index == 2)
-                            dao.update(mBaseQustion as FeedBackModel)
+                    } else if (questionModel.getQuestionTypeId() == QUSTION_TYPE_PHONE) {
+                        if (s != null)
+                            if (!s.isNullOrEmpty()) {
+                                if (s.length < 11 || s.length > 11) {
+                                    binding.etqustion.error = "Please enter valid phone number"
+                                    binding.etqustion.requestFocus()
+                                } else {
+                                    binding.etqustion.error = null
+                                    update()
+                                }
+                            }
+                    } else {
+                        GlobalScope.launch {
+                            if (index == 0)
+                                dao.update(mBaseQustion as PreliminaryInfoModel)
+                            if (index == 1)
+                                dao.update(mBaseQustion as QuestionModel)
+                            if (index == 2)
+                                dao.update(mBaseQustion as FeedBackModel)
+                        }
                     }
                 }
-            }
 
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
-            }
+                override fun beforeTextChanged(
+                    s: CharSequence?,
+                    start: Int,
+                    count: Int,
+                    after: Int
+                ) {
+                }
 
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-            }
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                }
 
-        })
+            }
+            binding.etqustion.addTextChangedListener(qustionTextWatcher)
+        }
         binding.takeImage.setOnClickListener {
             mQustionViewHolderInterface = this
             (context as SurveyActivity).takePicture(mBaseQustion, binding.ImageLayout)
@@ -172,11 +197,11 @@ class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
                       MediaStore.Images.Media.getBitmap((context as Activity).contentResolver, it)
                   var imageBitmap = Bitmap.createScaledBitmap(source, 100, 150, true)
                */
-                var imageView = ImageView(context)
+                var imageView = BaseImageView(context)
 
                 imageView.layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
+                    200,
+                    200
                 )
                 val marginParams =
                     MarginLayoutParams(imageView.layoutParams as LinearLayout.LayoutParams)
@@ -184,13 +209,13 @@ class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
                 var parms = LinearLayout.LayoutParams(marginParams)
                 imageView.layoutParams = parms
                 binding.ImageLayout.visibility = VISIBLE
-                Glide.with(imageView)
-                    .applyDefaultRequestOptions(RequestOptions().override(100, 100))
-                    .load(it)
-                    .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .signature(ObjectKey("" + mBaseQustion.getId() + "_" + mBaseQustion.getTittle()))
-                    .into(imageView)
-                imageView.scaleType = ImageView.ScaleType.FIT_XY
+                imageView.loadImage(it)
+                imageView.onDelete = {
+                    mBaseQustion.getImageuri()!!.remove(it)
+                    binding.ImageLayout.removeView(imageView)
+                    qustionAdapter.notifyItemChanged(adapterPosition)
+                    Log.e("TAG", " Image deleted ")
+                }
                 binding.ImageLayout.addView(imageView)
                 //  source.recycle()
                 binding.ImageLayout.visibility = VISIBLE
@@ -199,59 +224,104 @@ class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
         binding.etqustion.error = null
         when (mBaseQustion.getQuestionTypeId()) {
             QUESTION_TYPE_YESNO -> {
+                binding.etqustion.visibility = VISIBLE
+                binding.etqustion.hint = "Comment...."
+                try {
+                    if ((mBaseQustion as QuestionModel).comments.isNullOrEmpty()) {
+                        binding.etqustion.hint = "Comment...."
+                        binding.etqustion.setText("")
+                    } else
+                        binding.etqustion.setText(mBaseQustion.getCurrentComments().toString())
+                } catch (e: Exception) {
+                }
+
+                binding.etqustion.addTextChangedListener(object : TextWatcher {
+                    override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
+
+                    }
+
+                    override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
+
+                    }
+
+                    override fun afterTextChanged(p0: Editable?) {
+                        mBaseQustion.setCurrentComment(p0.toString())
+                        update()
+                    }
+                })
                 binding.yesNoLayout.visibility = VISIBLE
+                /* binding.radioYes.supportButtonTintList=*/
+                CompoundButtonCompat.setButtonTintList(
+                    binding.radioYes,
+                    ColorStateList.valueOf(ContextCompat.getColor(context, R.color.grey_60))
+                );
                 if (mBaseQustion.getAnswer() != null) {
                     binding.radioYes.isChecked = mBaseQustion.getAnswer() == "1"
                     binding.radioNo.isChecked = mBaseQustion.getAnswer() == "0"
+                    binding.radioNA.isChecked = mBaseQustion.getAnswer() == "-1"
                 } else {
                     binding.radioYes.isChecked = false
                     binding.radioNo.isChecked = false
+                    binding.radioNA.isChecked = false
                 }
                 if (mBaseQustion is QuestionModel) {
                     if (!(mBaseQustion as QuestionModel).fail.isNullOrEmpty()) {
                         if ((mBaseQustion as QuestionModel).fail == "0") {
-                            binding.radioNo.supportButtonTintList = redcolor
-                            binding.radioYes.supportButtonTintList = greencolor
+                            CompoundButtonCompat.setButtonTintList(binding.radioNo, redcolor)
+                            CompoundButtonCompat.setButtonTintList(binding.radioYes, greencolor)
                         } else {
-                            binding.radioNo.supportButtonTintList = greencolor
-                            binding.radioYes.supportButtonTintList = redcolor
+                            CompoundButtonCompat.setButtonTintList(binding.radioNo, greencolor)
+                            CompoundButtonCompat.setButtonTintList(binding.radioYes, redcolor)
                         }
                     } else {
-                        binding.radioNo.supportButtonTintList = redcolor
-                        binding.radioYes.supportButtonTintList = greencolor
+                        CompoundButtonCompat.setButtonTintList(binding.radioNo, redcolor)
+                        CompoundButtonCompat.setButtonTintList(binding.radioYes, greencolor)
                     }
                 }
             }
             QUSTION_TYPE_DATEPAST -> {
-                if (mBaseQustion.getTittle()?.contains("Date of last monitoring", true)!! ||
-                    (mBaseQustion.getTittle()?.contains("Date of last", true)!!)
-                ) {
-                    var name = templateModel.title?.split("-")?.get(0);
-                    var fecility = name?.let { dao.getFacility(it) }
-                    binding.dateTime.visibility = GONE
-                    binding.guidLine.visibility = VISIBLE
-                    if (!mBaseQustion.getAnswer().isNullOrEmpty()) {
-                        binding.guidLine.text = mBaseQustion.getAnswer()
-                    } else {
-                        binding.guidLine.text =fecility?.dateOfLastInspection
-                    }
-                    mBaseQustion.setAnswer(binding.guidLine.text as String?)
-                    update()
+                /*  var name = templateModel.title
+                  var fecility = name?.let { dao.getFacility(it) }
+                  binding.dateTime.visibility = GONE
+                  binding.guidLine.visibility = VISIBLE
+                  if (!mBaseQustion.getAnswer().isNullOrEmpty()) {
+                      binding.guidLine.text = mBaseQustion.getAnswer()
+                  } else {
+                      binding.guidLine.text = fecility?.dateOfLastInspection
+                  }
+                  mBaseQustion.setAnswer(binding.guidLine.text as String?)
+                  update()
+              } else {*/
+                var name = templateModel.title
+                var fecility = name?.let { dao.getFacility(it) }
+                binding.dateTime.visibility = GONE
+                binding.guidLine.visibility = VISIBLE
+                if (!mBaseQustion.getAnswer().isNullOrEmpty()) {
+                    binding.guidLine.text = mBaseQustion.getAnswer()
                 } else {
-                    binding.dateTime.text = "Select Date-Time"
-                    binding.dateTime.visibility = VISIBLE
-                    if (!mBaseQustion.getAnswer().isNullOrEmpty()) {
-                        binding.guidLine.text = mBaseQustion.getAnswer()
-                        binding.guidLine.visibility = VISIBLE
+                    binding.guidLine.text = fecility?.dateOfLastInspection
+                }
+                if (fecility != null) {
+                    if (!fecility.dateOfLastInspection.isNullOrEmpty()) {
+                        mBaseQustion.setAnswer(binding.guidLine.text as String?)
+                        update()
                     }
-                    binding.dateTime.setOnClickListener {
-                        Utils.dialogDatePickerLight(context, true) {
-                            binding.guidLine.text = it
-                            binding.guidLine.visibility = VISIBLE
-                            mBaseQustion.setAnswer(it)
-                            qustionAdapter.updateItem(mBaseQustion, index)
-                            update()
-                        }
+                } else {
+                    binding.dateTime.visibility = VISIBLE
+                }
+
+                binding.dateTime.text = "Select Date-Time"
+                if (!mBaseQustion.getAnswer().isNullOrEmpty()) {
+                    binding.guidLine.text = mBaseQustion.getAnswer()
+                    binding.guidLine.visibility = VISIBLE
+                }
+                binding.dateTime.setOnClickListener {
+                    Utils.dialogDatePickerLight(context, true) {
+                        binding.guidLine.text = it
+                        binding.guidLine.visibility = VISIBLE
+                        mBaseQustion.setAnswer(it)
+                        qustionAdapter.updateItem(mBaseQustion, index)
+                        update()
                     }
                 }
             }
@@ -288,7 +358,7 @@ class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
             QUESTION_TYPE_TEXTAREA -> {
                 binding.etqustion.visibility = VISIBLE
                 binding.etqustion.inputType = InputType.TYPE_CLASS_TEXT
-                binding.etqustion.setSingleLine(false)
+                binding.etqustion.isSingleLine = false
                 binding.etqustion.imeOptions = EditorInfo.IME_FLAG_NO_ENTER_ACTION
                 binding.etqustion.minHeight = Utils.convertDpToPixel(120f).toInt()
                 binding.etqustion.error = null
@@ -304,7 +374,8 @@ class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
                     if (mBaseQustion.getAnswer() != null) {
                         binding.guidLine.visibility = VISIBLE
                         binding.guidLine.text =
-                            mBaseQustion.getDropDownItems()?.get(Integer.parseInt(mBaseQustion.getAnswer()))
+                            mBaseQustion.getDropDownItems()
+                                ?.get(Integer.parseInt(mBaseQustion.getAnswer().toString()))
                                 ?: ""
                     }
                 } catch (e: Exception) {
@@ -314,7 +385,7 @@ class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
                     showDialog()
                 }
             }
-            Constant.QUSTION_TYPE_SECTIONTITTLE -> {
+            QUSTION_TYPE_SECTIONTITTLE -> {
                 binding.takeImage.visibility = GONE
             }
             QUSTION_TYPE_SIGNATURE -> {
@@ -326,6 +397,8 @@ class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
                         .into(binding.signature)
                     binding.guidLine.text = mBaseQustion.getAnswer()
                     binding.guidLine.visibility = VISIBLE
+                } else {
+                    binding.signature.setImageDrawable(null)
                 }
                 binding.takeImage.visibility = VISIBLE
                 binding.signature.visibility = VISIBLE
@@ -346,10 +419,27 @@ class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
                     (context as Activity).startActivityForResult(intent, 300)
                 }
             }
+            QUSTION_TYPE_MULTICHICE -> {
+                try {
+                    binding.dateTime.text = "Select Response"
+                    binding.dateTime.visibility = VISIBLE
+                    if (mBaseQustion.getAnswer() != null) {
+                        binding.guidLine.visibility = VISIBLE
+                        binding.guidLine.text = mBaseQustion.getAnswer().toString()
+                            .split(",").size.toString() + " Optin selected"
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+                binding.dateTime.setOnClickListener {
+                    showDialogMulti()
+                }
+            }
         }
         binding.radioNo.setOnCheckedChangeListener { _, g ->
             if (g) {
                 binding.radioYes.isChecked = false
+                binding.radioNA.isChecked = false
                 mBaseQustion.setAnswer("0")
                 qustionAdapter.updateItem(mBaseQustion, adapterPosition)
                 GlobalScope.launch {
@@ -360,6 +450,7 @@ class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
         binding.radioYes.setOnCheckedChangeListener { _, g ->
             if (g) {
                 binding.radioNo.isChecked = false
+                binding.radioNA.isChecked = false
                 mBaseQustion.setAnswer("1")
                 qustionAdapter.updateItem(mBaseQustion, adapterPosition)
                 GlobalScope.launch {
@@ -367,7 +458,17 @@ class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
                 }
             }
         }
-
+        binding.radioNA.setOnCheckedChangeListener { _, g ->
+            if (g) {
+                binding.radioNo.isChecked = false
+                binding.radioYes.isChecked = false
+                mBaseQustion.setAnswer("-1")
+                qustionAdapter.updateItem(mBaseQustion, adapterPosition)
+                GlobalScope.launch {
+                    dao.update(mBaseQustion as QuestionModel)
+                }
+            }
+        }
         binding.executePendingBindings()
     }
 
@@ -379,7 +480,7 @@ class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
         alertDialog.setSingleChoiceItems(
             mBaseQustion.getDropDownItems()?.toTypedArray(),
             if (!mBaseQustion.getAnswer().isNullOrEmpty()) try {
-                Integer.parseInt(mBaseQustion.getAnswer())
+                Integer.parseInt(mBaseQustion.getAnswer().toString())
             } catch (e: Exception) {
                 -1
             } else -1
@@ -390,14 +491,68 @@ class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
             qustionAdapter.updateItem(mBaseQustion, adapterPosition)
 
             GlobalScope.launch {
-                if (index == 0)
-                    dao.update(mBaseQustion as PreliminaryInfoModel)
-                if (index == 1)
-                    dao.update(mBaseQustion as QuestionModel)
-                if (index == 2)
-                    dao.update(mBaseQustion as FeedBackModel)
+                update()
             }
             dialog.dismiss()
+        }
+        var dialog = alertDialog.create()
+        lp.copyFrom(dialog.window!!.attributes)
+        lp.width = WindowManager.LayoutParams.MATCH_PARENT
+        lp.height = WindowManager.LayoutParams.WRAP_CONTENT
+        dialog.show()
+        dialog?.window?.attributes = lp
+        dialog.window?.setBackgroundDrawable(
+            ColorDrawable(
+                ContextCompat.getColor(
+                    context,
+                    android.R.color.white
+                )
+            )
+        )
+
+    }
+
+    private fun showDialogMulti() {
+        var alertDialog = AlertDialog.Builder(binding.root.context)
+        alertDialog.setTitle(mBaseQustion.getTittle())
+        val lp = WindowManager.LayoutParams()
+        var ans = mBaseQustion.getAnswer()?.split(",")?.toList()
+        var array = mBaseQustion.getDropDownItems()?.toTypedArray()?.size?.let {
+            BooleanArray(
+                it
+            ) { i ->
+                if (!ans.isNullOrEmpty()) false
+                else ans?.contains("$i")!!
+            }
+        }
+        try {
+            ans?.forEach {
+                array?.set(it.toInt(), true)
+            }
+        } catch (e: Exception) {
+        }
+        alertDialog.setMultiChoiceItems(
+            mBaseQustion.getDropDownItems()?.toTypedArray(),
+            array
+        ) { p0, p1, p2 ->
+            if (p2)
+                if (mBaseQustion.getAnswer().isNullOrEmpty()) {
+                    mBaseQustion.setAnswer("$p1")
+                } else {
+                    mBaseQustion.setAnswer(mBaseQustion.getAnswer() + ",$p1")
+                }
+            else {
+                if (mBaseQustion.getAnswer()?.length!! >= 2) {
+                    mBaseQustion.setAnswer(mBaseQustion.getAnswer()?.replace(",$p1", ""))
+                } else
+                    mBaseQustion.setAnswer("")
+            }
+            binding.guidLine.visibility = VISIBLE
+
+            binding.guidLine.text =
+                mBaseQustion.getAnswer()?.split(",")?.size.toString() + " Option selected"
+            qustionAdapter.updateItem(mBaseQustion, adapterPosition)
+            update()
         }
         var dialog = alertDialog.create()
         lp.copyFrom(dialog.window!!.attributes)
@@ -420,32 +575,29 @@ class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
         if (mBaseQustion.getQuestionTypeId() != QUSTION_TYPE_SIGNATURE) {
             if (mBaseQustion.getImageuri() == null)
                 mBaseQustion.setImageuri(ArrayList())
-            mBaseQustion.getImageuri()?.add(uri)
-            qustionAdapter.updateItem(mBaseQustion, adapterPosition)
+            var uris=mBaseQustion.getImageuri();
+           uris?.add(uri)
+            mBaseQustion.setImageuri(uris)
+            qustionAdapter.updateItem(mBaseQustion, bindingAdapterPosition)
+            qustionAdapter.notifyItemChanged(bindingAdapterPosition)
             GlobalScope.launch {
-                if (index == 0)
-                    dao.update(mBaseQustion as PreliminaryInfoModel)
-                if (index == 1)
-                    dao.update(mBaseQustion as QuestionModel)
-                if (index == 2)
-                    dao.update(mBaseQustion as FeedBackModel)
-
+                update()
             }
         } else {
             binding.signature.setImageBitmap(BitmapFactory.decodeFile(uri))
             mBaseQustion.setImageuri(ArrayList())
             mBaseQustion.setAnswer(Utils.getFormattedDateSimple(Calendar.getInstance().timeInMillis))
             mBaseQustion.getImageuri()?.add(uri)
-            qustionAdapter.updateItem(mBaseQustion, adapterPosition)
+            qustionAdapter.updateItem(mBaseQustion, bindingAdapterPosition)
             GlobalScope.launch {
-                if (index == 0)
-                    dao.update(mBaseQustion as PreliminaryInfoModel)
-                if (index == 1)
-                    dao.update(mBaseQustion as QuestionModel)
-                if (index == 2)
-                    dao.update(mBaseQustion as FeedBackModel)
+                update()
             }
         }
+    }
+
+    override fun onImageDelete(uri: String) {
+        mBaseQustion.getImageuri()!!.remove(uri)
+        qustionAdapter.notifyItemChanged(bindingAdapterPosition)
     }
 
     private fun update() {

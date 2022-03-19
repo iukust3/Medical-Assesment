@@ -32,7 +32,6 @@ import com.example.medicalassesment.Utials.Constant
 import com.example.medicalassesment.Utials.Constant.Companion.QUESTION_TYPE_YESNO
 import com.example.medicalassesment.Utials.Constant.Companion.QUESTION_TYPE_YESNO_WITH_COMMENT
 import com.example.medicalassesment.Utials.Constant.Companion.QUSTION_TYPE_DROPDOWN
-import com.example.medicalassesment.Utials.Utils
 import com.wdullaer.materialdatetimepicker.date.DatePickerDialog
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -43,10 +42,11 @@ import java.util.*
 class PreviewItem @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 ) : LinearLayout(context, attrs, defStyleAttr) {
-companion object{
-    private var stateindex = -1;
-    private var lgaindex = -1;
-}
+    companion object {
+        private var stateindex = -1;
+        private var lgaindex = -1;
+    }
+
     private var mBinding: OverviewLayoutBinding
     lateinit var mQuestionModel: BaseQustion
 
@@ -62,16 +62,37 @@ companion object{
 
             mBinding.optionButton.visibility = visibility;
             mBinding.answerLable.visibility = View.GONE
+            when {
+                mQuestionModel.getAnswer() == "1" -> {
+                    mBinding.optionButton.text = "Yes"
+                    mBinding.optionButton.setBackgroundResource(R.drawable.option_green)
+                }
+                mQuestionModel.getAnswer() == "0" -> {
+                    mBinding.optionButton.text = "No"
+                    mBinding.optionButton.setBackgroundResource(R.drawable.option_red)
+                }
+                else -> {
+                    mBinding.optionButton.text = "NA"
+                    mBinding.optionButton.setBackgroundResource(R.drawable.option_na)
 
-            if (mQuestionModel.getAnswer() == "1") {
-                mBinding.optionButton.text = "Yes"
-                mBinding.optionButton.setBackgroundResource(R.drawable.option_green)
-            } else {
-                mBinding.optionButton.text = "No"
-                mBinding.optionButton.setBackgroundResource(R.drawable.option_red)
+                }
             }
-            if (baseQuestion.fail == "1")
+            if (baseQuestion.fail == mQuestionModel.getAnswer()) {
                 mBinding.optionButton.setBackgroundResource(R.drawable.option_red)
+            } else if (baseQuestion.fail != baseQuestion.getAnswer() && baseQuestion.getAnswer()!="-1") {
+                mBinding.optionButton.setBackgroundResource(R.drawable.option_green)
+            }/* else if (baseQuestion.fail == "1" && baseQuestion.getAnswer() == "0") {
+                mBinding.optionButton.setBackgroundResource(R.drawable.option_green)
+            } else if (baseQuestion.fail == "0" && baseQuestion.getAnswer() == "1") {
+                mBinding.optionButton.setBackgroundResource(R.drawable.option_green)
+            }*/ else
+                when {
+                    baseQuestion.getAnswer() == "1" -> mBinding.optionButton.setBackgroundResource(R.drawable.option_green)
+                    baseQuestion.getAnswer() == "0" -> mBinding.optionButton.setBackgroundResource(
+                        R.drawable.option_red
+                    )
+                    else -> mBinding.optionButton.setBackgroundResource(R.drawable.option_na)
+                }
         } else {
             mBinding.answerLable.visibility = View.VISIBLE
 
@@ -130,6 +151,8 @@ companion object{
                     .signature(ObjectKey(baseQuestion.getQuestionTypeId() + "" + baseQuestion.getId() + "_" + baseQuestion.getTittle()))
                     .into(mBinding.signature)
             } catch (e: Exception) {
+                mBinding.signature.setImageDrawable(null)
+                mBinding.signature.visibility= GONE
             }
         }
         mBinding.title.text = mQuestionModel.getTittle()
@@ -143,40 +166,42 @@ companion object{
 
         } else*/
         mBinding.answerLable.text = mQuestionModel.getAnswer()
+        mBinding.answerLable.layoutParams=LayoutParams(LayoutParams.MATCH_PARENT,LayoutParams.WRAP_CONTENT)
+        Log.e("TAG", "Answer :"+mQuestionModel.getAnswer())
         if (OverViewActivity.orignalModel.status == "completed") {
             mBinding.edit.visibility = View.GONE
         }
         if (baseQuestion is PreliminaryInfoModel) {
             val prefHelper = PrefHelper(context);
             try {
-                Log.e("TAG","Id"+baseQuestion.preliminery_info_id )
-                when (baseQuestion.title) {
+                 when (baseQuestion.title) {
                     "Facility Name:" ->
                         mBinding.answerLable.text =
-                            OverViewActivity.orignalModel.title?.split("-")?.get(0)
-                    "Ward :"-> {
+                            OverViewActivity.orignalModel.title
+                    "Ward :" -> {
                         mBinding.answerLable.text =
                             prefHelper.getState().state[stateindex].lgas[lgaindex].wards[Integer.parseInt(
-                                baseQuestion.getAnswer()
+                                baseQuestion.getAnswer().toString()
                             )].name
                     }
-                    "State : "-> {
-                        stateindex = Integer.parseInt(baseQuestion.getAnswer())
+                    "State : " -> {
+                        stateindex = Integer.parseInt(baseQuestion.getAnswer().toString())
                         mBinding.answerLable.text =
                             prefHelper.getState()
-                                .getName(Integer.parseInt(baseQuestion.getAnswer()))
+                                .getName(Integer.parseInt(baseQuestion.getAnswer().toString()))
 
                     }
-                    "LGA : "-> {
-                        lgaindex = Integer.parseInt(baseQuestion.getAnswer())
+                    "LGA : " -> {
+                        lgaindex = Integer.parseInt(baseQuestion.getAnswer().toString())
                         mBinding.answerLable.text =
                             prefHelper.getState().state[stateindex].lgas[lgaindex].name
                     }
                 }
-            }catch (e: Exception) {
+            } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
+        mBinding.edit.visibility = GONE
         mBinding.edit.setOnClickListener { showCustomDialog() }
     }
 
@@ -356,7 +381,7 @@ companion object{
         val lp = WindowManager.LayoutParams()
         alertDialog.setSingleChoiceItems(
             baseQuestion.getDropDownItems()?.toTypedArray(),
-            if (baseQuestion.getAnswer() != null) Integer.parseInt(baseQuestion.getAnswer()) else -1
+            if (baseQuestion.getAnswer() != null) Integer.parseInt(baseQuestion.getAnswer().toString()) else -1
         ) { dialog, which ->
             mBinding.guidLine.visibility = VISIBLE
             mBinding.guidLine.text = baseQuestion.getDropDownItems()?.get(which) ?: ""

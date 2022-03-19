@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
-<item android:id="@+id/logout"
-    android:title="Logout"
-    android:icon="@drawable/ic_logout"
-    app:showAsAction="always"/>
+    <item
+        android:id="@+id/logout"
+        android:icon="@drawable/ic_logout"
+        android:title="Logout"
+        app:showAsAction="always" />
     <item
         android:id="@+id/update_state"
         android:title="Update State" />
     <item
-        android:id="@+id/update_lga"
-        android:title="Update LGA" />
+        android:id="@+id/update_templates"
+        android:title="Update Inspection Tools" />
     <item
-        android:id="@+id/update_wards"
-        android:title="Update Wards" />
+        android:id="@+id/clearData"
+        android:title="Clear Data" />
 </menu>

@@ -70,6 +70,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMyLoca
                             mMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 18f))
                             markerOptions = MarkerOptions().position(latLng)
                             mMap?.addMarker(markerOptions)
+                            showDilog(latLng)
                         }
                     }
                 }
@@ -143,6 +144,7 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMyLoca
                                 mMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 18f))
                                 markerOptions = MarkerOptions().position(latLng)
                                 mMap?.addMarker(markerOptions)
+                                showDilog(latLng)
                             }
                         }
                     }

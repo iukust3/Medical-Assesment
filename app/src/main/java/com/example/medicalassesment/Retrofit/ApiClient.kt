@@ -12,7 +12,7 @@ import java.util.logging.Level
 
 class ApiClient {
     companion object {
-        private val BASE_URL = "http://moonligthing.com/pcninspection/public/api/"
+        private val BASE_URL = "http://inspection.pcn.gov.ng/api/"
         @Volatile
         @JvmStatic
         private lateinit var retrofit: Retrofit
@@ -35,7 +35,7 @@ class ApiClient {
                 val client = OkHttpClient.Builder()
                     .connectTimeout(1, TimeUnit.MINUTES)
                     .addInterceptor(HttpIntercepter())
-                    .addInterceptor(HttpLoggingInterceptor().apply { level=HttpLoggingInterceptor.Level.BODY })
+                    .addInterceptor(HttpLoggingInterceptor())
                     .readTimeout(30, TimeUnit.SECONDS)
                     .writeTimeout(15,TimeUnit.SECONDS).build()
                 retrofit = Retrofit.Builder()

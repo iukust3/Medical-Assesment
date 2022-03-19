@@ -17,11 +17,6 @@ class HttpIntercepter : Interceptor {
         var newRequest =
             request.newBuilder().url(stringurl).build()
 
-        Log.e("TAG", "url $stringurl")
-        Log.e("TAG", "url ${request.method}")
-        Log.e("TAG", "" + newRequest.method)
-        Log.e("TAG", "" + newRequest.headers.toString())
-        Log.e("TAG", "" + newRequest.body.toString())
         return chain.proceed(newRequest)
     }
 

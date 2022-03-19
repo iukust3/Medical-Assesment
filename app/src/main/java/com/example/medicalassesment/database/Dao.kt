@@ -14,12 +14,15 @@ interface Dao {
     @Query("SELECT * FROM QuestionModel WHERE template_id=:tampletId ORDER BY id ASC")
     fun getQuestionsNonlive(tampletId: String): List<QuestionModel>
 
-    @Query("SELECT * FROM QuestionModel WHERE template_id=:tampletId AND `fail` IS NULL OR `fail`!='0' OR `fail`!='1'")
+    @Query("SELECT * FROM QuestionModel WHERE template_id=:tampletId AND (`fail` IS NULL OR `fail`!='0' OR `fail`!='1')")
     fun getQuestionsNonFail(tampletId: String): List<QuestionModel>
 
 
-    @Query("SELECT * FROM QuestionModel WHERE template_id=:tampletId AND `fail`==answer ")
+    @Query("SELECT * FROM QuestionModel WHERE template_id=:tampletId AND `fail`==`answer` ")
     fun getFaildItems(tampletId: String): List<QuestionModel>
+
+    @Query("SELECT * FROM QuestionModel WHERE template_id=:tampletId AND `fail`==`answer` AND dealBreaker=:dealBreaker")
+    fun getFaildItems(tampletId: String, dealBreaker: String): List<QuestionModel>
 
     @Query("SELECT * FROM FeedBackModel WHERE template_id=:tampletId")
     fun getFeedBackNonlive(tampletId: String): List<FeedBackModel>
@@ -38,6 +41,7 @@ interface Dao {
 
     @Query("SELECT * FROM PreliminaryInfoModel WHERE template_id=:tampletId AND questiontype='default'")
     fun getDefaultInfo(tampletId: String): List<PreliminaryInfoModel>
+
 
     @Query("SELECT * FROM QuestionModel")
     fun getQuestions(): List<QuestionModel>
@@ -65,6 +69,7 @@ interface Dao {
 
     @Query("SELECT * FROM Facility WHERE id=:id")
     fun getFacility(id: Int): Facility
+
     @Query("SELECT * FROM Facility WHERE name =:name")
     fun getFacility(name: String): Facility
 
@@ -86,14 +91,20 @@ interface Dao {
     @Query("SELECT * FROM TemplateModel")
     suspend fun getTemplate(): List<TemplateModel>
 
-    @Query("SELECT * FROM TemplateModel WHERE isUploaded=:isUploaded")
+    @Query("SELECT * FROM TemplateModel WHERE status='completed' AND isUploaded=:isUploaded")
     suspend fun getTemplate(isUploaded: Boolean): List<TemplateModel>
 
     @Query("SELECT * FROM TemplateModel WHERE status=:status")
-    fun getTemplate(status: String): List<TemplateModel>
+    suspend fun getTemplate(status: String): List<TemplateModel>
 
-    @Query("SELECT * FROM TemplateModel WHERE status=:status AND title LIKE :filter")
-    fun getTemplate(status: String, filter: String): List<TemplateModel>
+    @Query("SELECT * FROM TemplateModel WHERE status='completed' OR status='InProgress' AND  title LIKE :filter")
+    suspend fun getDeshboardTemplate(filter: String): List<TemplateModel>
+
+    @Query("SELECT * FROM TemplateModel WHERE status='completed' OR status='InProgress'")
+    suspend fun getDeshboardAllTemplate(): List<TemplateModel>
+
+    @Query("SELECT * FROM TemplateModel WHERE status=:status AND  title LIKE :filter")
+    suspend fun getTemplate(status: String, filter: String): List<TemplateModel>
 
     @Query("SELECT * FROM TemplateModel WHERE status=:status")
     fun getTamplateLive(status: String): LiveData<List<TemplateModel>>

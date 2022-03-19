@@ -8,6 +8,8 @@
          location permissions for the 'MyLocation' functionality.
     -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.CAMERA" />
@@ -15,7 +17,10 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false"
+        />
     <application
         android:name=".MyApplication"
         android:allowBackup="true"
@@ -26,12 +31,16 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
-        <activity android:name=".Activities.ReportActivity"/>
+        <activity android:name=".ReportsActivity" />
+        <activity android:name=".Activities.ProfileSetting" />
+        <activity android:name=".Activities.BaseActivity" />
+        <activity android:name=".Activities.FecilityActivity" />
+        <activity android:name=".Activities.GenrateReportActivity" />
 
         <service
             android:name=".service.UploadingService"
             android:enabled="true"
-            android:exported="true" />
+            android:exported="false" />
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
@@ -45,14 +54,17 @@
         <activity android:name=".Activities.InspectionActivity" />
         <activity android:name=".Activities.OverViewActivity" />
         <activity android:name=".Activities.LoginActivity" />
-        <activity android:name=".Activities.SplashActivity">
+        <activity android:name=".Activities.SplashActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".Activities.SurveyActivity" />
+        <activity
+            android:name=".Activities.SurveyActivity"
+            android:windowSoftInputMode="stateHidden|adjustResize"/>
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -68,12 +80,30 @@
             android:name="io.fabric.ApiKey"
             android:value="25fe5635dfd9d6d1f42d662b08c0395914ba47fe" />
 
-        <receiver android:name=".Receiver.WifiReceiver">
+        <receiver android:name=".Receiver.WifiReceiver"
+            android:exported="false">
             <intent-filter>
                 <action android:name="android.net.wifi.WIFI_STATE_CHANGED" />
                 <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
             </intent-filter>
         </receiver>
-    </application>
 
+    </application>
+    <queries>
+        <!-- Browser -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="http" />
+        </intent>
+
+        <!-- Camera -->
+        <intent>
+            <action android:name="android.media.action.IMAGE_CAPTURE" />
+        </intent>
+
+        <!-- Gallery -->
+        <intent>
+            <action android:name="android.intent.action.GET_CONTENT" />
+        </intent>
+    </queries>
 </manifest>

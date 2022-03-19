@@ -1,7 +1,9 @@
 <resources>
-    <string name="app_name">Medical Assesment</string>
+    <string name="app_name">PCN Inspection Tool</string>
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="title_activity_maps">Map</string>
+    <string name="sync">Synced</string>
+    <string name="Notsync">Not Synced</string>
 </resources>

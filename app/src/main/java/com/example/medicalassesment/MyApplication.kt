@@ -2,7 +2,6 @@ package com.example.medicalassesment
 
 import android.app.Application
 import android.util.Log
-import com.crashlytics.android.Crashlytics
 import com.example.medicalassesment.database.DataBaseModule
 import com.example.medicalassesment.Helper.PrefHelper
 import com.example.medicalassesment.models.UserModel
@@ -14,7 +13,6 @@ import com.example.medicalassesment.di.DaggerAppComponent
 import dagger.android.AndroidInjector
 import dagger.android.DispatchingAndroidInjector
 import dagger.android.HasAndroidInjector
-import io.fabric.sdk.android.Fabric
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -28,8 +26,7 @@ class MyApplication : Application(), HasAndroidInjector {
 
     override fun onCreate() {
         super.onCreate()
-        MyApplication.APPLICATION=this;
-        Fabric.with(this, Crashlytics())
+        APPLICATION=this;
         appComponent = DaggerAppComponent.builder()
             .application(this)
             .setDatabaseModule(DataBaseModule(this))
@@ -37,7 +34,7 @@ class MyApplication : Application(), HasAndroidInjector {
         appComponent.inject(this)
         AppInjector.init(this)
         try {
-            USER = PrefHelper(this).getUserModel().data[0]
+            USER = PrefHelper(this).getUserModel().data
         } catch (e: Exception) {
         }
         GlobalScope.launch {
