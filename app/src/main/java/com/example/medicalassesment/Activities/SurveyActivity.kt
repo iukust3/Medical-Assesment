@@ -76,9 +76,7 @@ class SurveyActivity : BaseActivity(), FragmentInteraction {
         myActivityResultLauncher = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()
         ) {
-            if (it.resultCode == RESULT_OK) {
-
-            }
+          onActivityResults(requestCode,it.resultCode,it.data)
         }
         iniateUi(dataBiding.root)
         setCurrantClassName(this)
@@ -307,6 +305,8 @@ class SurveyActivity : BaseActivity(), FragmentInteraction {
                 takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, uri)
                 takePictureIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 startActivityForResult(takePictureIntent, 200)
+               /* requestCode=200;
+                myActivityResultLauncher.launch(takePictureIntent)*/
             /* registerForActivityResult(
                     ActivityResultContracts.StartActivityForResult()
                 ) {
@@ -358,8 +358,13 @@ Log.e("TAG","Null error")
         }
     }
 
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+    override fun startActivityForResult(intent: Intent?, requestCode: Int) {
+        this.requestCode=requestCode;
+        myActivityResultLauncher.launch(intent);
+        Log.e("TAG","Start activity with code "+requestCode);
+    }
+private var requestCode =-10;
+      fun onActivityResults(requestCode: Int, resultCode: Int, data: Intent?) {
         if (requestCode == 200 && resultCode == RESULT_OK) {
              try {
                 val source = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -397,6 +402,10 @@ Log.e("TAG","Null error")
                 //Try to recover
             }
         } else if (requestCode == 300 && resultCode == Activity.RESULT_OK) {
+            val image=data?.extras?.getString("Image");
+            if(image!==null)
+            QustionViewHolder.mQustionViewHolderInterface.onPictureDone(image)
+            else
             QustionViewHolder.mQustionViewHolderInterface.onPictureDone(file.absolutePath)
         } else if (requestCode == 400 && resultCode == Activity.RESULT_OK) {
             val fragment = supportFragmentManager.findFragmentById(R.id.container)

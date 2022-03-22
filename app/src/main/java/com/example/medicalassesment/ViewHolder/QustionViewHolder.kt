@@ -30,6 +30,7 @@ import com.example.medicalassesment.Utials.Constant.Companion.QUESTION_TYPE_YESN
 import com.example.medicalassesment.databinding.NewItemLayoutBinding
 import android.view.ViewGroup.MarginLayoutParams
 import android.view.inputmethod.EditorInfo
+import android.widget.Toast
 import androidx.appcompat.widget.AppCompatRadioButton
 import androidx.core.content.ContextCompat
 import androidx.core.widget.CompoundButtonCompat
@@ -40,6 +41,7 @@ import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.signature.ObjectKey
 import com.example.medicalassesment.Activities.BaseActivity
 import com.example.medicalassesment.Activities.SignatureActivity
+import com.example.medicalassesment.GlideApp
 import com.example.medicalassesment.adapter.QustionAdapter
 import com.example.medicalassesment.database.Dao
 import com.example.medicalassesment.database.MedicalDataBase
@@ -54,12 +56,15 @@ import com.example.medicalassesment.Utials.Utils
 import com.example.medicalassesment.models.*
 import com.example.medicalassesment.uIItems.BaseImageView
 import com.google.gson.Gson
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import java.io.File
 import java.util.*
 import kotlin.collections.ArrayList
 
 
+@DelicateCoroutinesApi
 class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
     private val dao: Dao
 
@@ -136,7 +141,7 @@ class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
             var qustionTextWatcher = object : TextWatcher {
                 override fun afterTextChanged(s: Editable?) {
                     mBaseQustion.setAnswer(s.toString())
-                    qustionAdapter.updateItem(mBaseQustion, adapterPosition)
+                    qustionAdapter.updateItem(mBaseQustion, bindingAdapterPosition)
                     if (questionModel.getQuestionTypeId() == QUSTION_TYPE_EMAIL) {
                         if (!s.isNullOrEmpty()) {
                             if (!Patterns.EMAIL_ADDRESS.matcher(s).matches()) {
@@ -206,14 +211,32 @@ class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
                 val marginParams =
                     MarginLayoutParams(imageView.layoutParams as LinearLayout.LayoutParams)
                 marginParams.setMargins(20, 20, 10, 20)
-                var parms = LinearLayout.LayoutParams(marginParams)
+                val parms = LinearLayout.LayoutParams(marginParams)
                 imageView.layoutParams = parms
                 binding.ImageLayout.visibility = VISIBLE
                 imageView.loadImage(it)
                 imageView.onDelete = {
-                    mBaseQustion.getImageuri()!!.remove(it)
-                    binding.ImageLayout.removeView(imageView)
-                    qustionAdapter.notifyItemChanged(adapterPosition)
+                    val folder = File(
+                        Utils.getFolderPath(
+                            context,
+                            questionModel.getId(),
+                            questionModel.getToolId()
+                        )
+                    )
+                    val listofImages = folder.listFiles()
+                    listofImages.forEach {file->
+                        var spliter=it.split("/")
+                        if(file.name==spliter[spliter.size-1]){
+                            if(file.delete()){
+                                mBaseQustion.getImageuri()!!.remove(it)
+                                binding.ImageLayout.removeView(imageView)
+                                qustionAdapter.notifyItemChanged(bindingAdapterPosition)
+                                update()
+                            }else {
+                                Toast.makeText(context,"Error while delete Image", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    }
                     Log.e("TAG", " Image deleted ")
                 }
                 binding.ImageLayout.addView(imageView)
@@ -391,7 +414,7 @@ class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
             QUSTION_TYPE_SIGNATURE -> {
                 if (!mBaseQustion.getImageuri().isNullOrEmpty()) {
                     binding.signature.scaleType = ImageView.ScaleType.FIT_XY
-                    Glide.with(binding.signature)
+                    GlideApp.with(binding.signature)
                         .setDefaultRequestOptions(RequestOptions().override(500, 500))
                         .load(mBaseQustion.getImageuri()!![0])
                         .into(binding.signature)
@@ -441,7 +464,7 @@ class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
                 binding.radioYes.isChecked = false
                 binding.radioNA.isChecked = false
                 mBaseQustion.setAnswer("0")
-                qustionAdapter.updateItem(mBaseQustion, adapterPosition)
+                qustionAdapter.updateItem(mBaseQustion, bindingAdapterPosition)
                 GlobalScope.launch {
                     dao.update(mBaseQustion as QuestionModel)
                 }
@@ -452,7 +475,7 @@ class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
                 binding.radioNo.isChecked = false
                 binding.radioNA.isChecked = false
                 mBaseQustion.setAnswer("1")
-                qustionAdapter.updateItem(mBaseQustion, adapterPosition)
+                qustionAdapter.updateItem(mBaseQustion, bindingAdapterPosition)
                 GlobalScope.launch {
                     dao.update(mBaseQustion as QuestionModel)
                 }
@@ -463,7 +486,7 @@ class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
                 binding.radioNo.isChecked = false
                 binding.radioYes.isChecked = false
                 mBaseQustion.setAnswer("-1")
-                qustionAdapter.updateItem(mBaseQustion, adapterPosition)
+                qustionAdapter.updateItem(mBaseQustion, bindingAdapterPosition)
                 GlobalScope.launch {
                     dao.update(mBaseQustion as QuestionModel)
                 }
@@ -474,7 +497,7 @@ class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
 
 
     private fun showDialog() {
-        var alertDialog = AlertDialog.Builder(binding.root.context)
+        val alertDialog = AlertDialog.Builder(binding.root.context)
         alertDialog.setTitle(mBaseQustion.getTittle())
         val lp = WindowManager.LayoutParams()
         alertDialog.setSingleChoiceItems(
@@ -488,7 +511,7 @@ class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
             binding.guidLine.visibility = VISIBLE
             binding.guidLine.text = mBaseQustion.getDropDownItems()?.get(which) ?: ""
             mBaseQustion.setAnswer("$which")
-            qustionAdapter.updateItem(mBaseQustion, adapterPosition)
+            qustionAdapter.updateItem(mBaseQustion, bindingAdapterPosition)
 
             GlobalScope.launch {
                 update()
@@ -551,7 +574,7 @@ class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
 
             binding.guidLine.text =
                 mBaseQustion.getAnswer()?.split(",")?.size.toString() + " Option selected"
-            qustionAdapter.updateItem(mBaseQustion, adapterPosition)
+            qustionAdapter.updateItem(mBaseQustion, bindingAdapterPosition)
             update()
         }
         var dialog = alertDialog.create()
@@ -596,6 +619,9 @@ class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
     }
 
     override fun onImageDelete(uri: String) {
+        val file=File(uri);
+        if(file.exists())
+            file.delete()
         mBaseQustion.getImageuri()!!.remove(uri)
         qustionAdapter.notifyItemChanged(bindingAdapterPosition)
     }

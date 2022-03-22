@@ -39,6 +39,7 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.signature.ObjectKey
 import com.example.medicalassesment.Activities.SignatureActivity
+import com.example.medicalassesment.GlideApp
 import com.example.medicalassesment.adapter.CustomArrayAdapterFacilities
 import com.example.medicalassesment.adapter.StartAdapter
 import com.example.medicalassesment.database.Dao
@@ -127,7 +128,7 @@ class StartViewHolder(
         binding.etqustion.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
                 mBaseQustion.setAnswer(s.toString())
-                qustionAdapter.updateItem(mBaseQustion, adapterPosition)
+                qustionAdapter.updateItem(mBaseQustion, bindingAdapterPosition)
                 if (questionModel.getQuestionTypeId() == QUSTION_TYPE_EMAIL) {
                     if (!s.isNullOrEmpty()) {
                         if (!Patterns.EMAIL_ADDRESS.matcher(s).matches()) {
@@ -196,7 +197,7 @@ class StartViewHolder(
                 var parms = LinearLayout.LayoutParams(marginParams)
                 imageView.layoutParams = parms
                 binding.ImageLayout.visibility = VISIBLE
-                Glide.with(imageView)
+                GlideApp.with(imageView)
                     .applyDefaultRequestOptions(RequestOptions().override(100, 100))
                     .load(it)
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
@@ -290,7 +291,7 @@ class StartViewHolder(
                     }
                     mBaseQustion.getTittle()?.toLowerCase()?.contains("lga")!! -> {
                         binding.dateTime.setOnClickListener {
-                            if (qustionAdapter.getItem(adapterPosition - 1).getAnswer()
+                            if (qustionAdapter.getItem(bindingAdapterPosition - 1).getAnswer()
                                     .isNullOrEmpty()
                             ) {
                                 Snackbar.make(
@@ -310,7 +311,7 @@ class StartViewHolder(
                                 binding.guidLine.visibility = VISIBLE
                                 binding.guidLine.text =
                                     prefHelper.getState().state[Integer.parseInt(
-                                        qustionAdapter.getItem(adapterPosition - 1).getAnswer()
+                                        qustionAdapter.getItem(bindingAdapterPosition - 1).getAnswer()
                                             .toString()
                                     )].lgas[Integer.parseInt(
                                         mBaseQustion.getAnswer().toString()
@@ -322,7 +323,7 @@ class StartViewHolder(
                     }
                     mBaseQustion.getTittle()?.toLowerCase()?.contains("ward")!! -> {
                         binding.dateTime.setOnClickListener {
-                            if (qustionAdapter.getItem(adapterPosition - 1).getAnswer()
+                            if (qustionAdapter.getItem(bindingAdapterPosition - 1).getAnswer()
                                     .isNullOrEmpty()
                             ) {
                                 Snackbar.make(
@@ -342,10 +343,10 @@ class StartViewHolder(
                                 binding.guidLine.visibility = VISIBLE
                                 binding.guidLine.text =
                                     prefHelper.getState().state[Integer.parseInt(
-                                        qustionAdapter.getItem(adapterPosition - 2).getAnswer()
+                                        qustionAdapter.getItem(bindingAdapterPosition - 2).getAnswer()
                                             .toString()
                                     )].lgas[Integer.parseInt(
-                                        qustionAdapter.getItem(adapterPosition - 1).getAnswer()
+                                        qustionAdapter.getItem(bindingAdapterPosition - 1).getAnswer()
                                             .toString()
                                     )].wards[Integer.parseInt(
                                         mBaseQustion.getAnswer().toString()
@@ -389,7 +390,7 @@ class StartViewHolder(
             QUSTION_TYPE_SIGNATURE -> {
                 if (!mBaseQustion.getImageuri().isNullOrEmpty()) {
                     binding.signature.scaleType = ImageView.ScaleType.FIT_XY
-                    Glide.with(binding.signature)
+                    GlideApp.with(binding.signature)
                         .setDefaultRequestOptions(RequestOptions().override(500, 500))
                         .load(mBaseQustion.getImageuri()!![0])
                         .into(binding.signature)
@@ -420,7 +421,7 @@ class StartViewHolder(
             if (g) {
                 binding.radioYes.isChecked = false
                 mBaseQustion.setAnswer("0")
-                qustionAdapter.updateItem(mBaseQustion, adapterPosition)
+                qustionAdapter.updateItem(mBaseQustion, bindingAdapterPosition)
                 GlobalScope.launch {
                     dao.update(mBaseQustion as QuestionModel)
                 }
@@ -430,7 +431,7 @@ class StartViewHolder(
             if (g) {
                 binding.radioNo.isChecked = false
                 mBaseQustion.setAnswer("1")
-                qustionAdapter.updateItem(mBaseQustion, adapterPosition)
+                qustionAdapter.updateItem(mBaseQustion, bindingAdapterPosition)
                 GlobalScope.launch {
                     dao.update(mBaseQustion as QuestionModel)
                 }
@@ -505,7 +506,7 @@ class StartViewHolder(
             binding.guidLine.visibility = VISIBLE
             binding.guidLine.text = category[which].name
             mBaseQustion.setAnswer("$which")
-            qustionAdapter.updateItem(mBaseQustion, adapterPosition)
+            qustionAdapter.updateItem(mBaseQustion, bindingAdapterPosition)
 
             update()
             dialog.dismiss()
@@ -548,12 +549,12 @@ class StartViewHolder(
             binding.guidLine.visibility = VISIBLE
             binding.guidLine.text = category.facilities[which].name
             mBaseQustion.setAnswer("${category.facilities[which].id}")
-            if (qustionAdapter.getItem(adapterPosition + 1)
+            if (qustionAdapter.getItem(bindingAdapterPosition + 1)
                     .getQuestionTypeId() == QUSTION_TYPE_READONLY
             ) {
                 addresText.text = category.facilities[which].address
             }
-            qustionAdapter.updateItem(mBaseQustion, adapterPosition)
+            qustionAdapter.updateItem(mBaseQustion, bindingAdapterPosition)
             GlobalScope.launch {
                 update()
                 val fecility = category.facilities[which]
@@ -590,14 +591,14 @@ class StartViewHolder(
             if (mBaseQustion.getImageuri() == null)
                 mBaseQustion.setImageuri(ArrayList())
             mBaseQustion.getImageuri()?.add(uri)
-            qustionAdapter.updateItem(mBaseQustion, adapterPosition)
+            qustionAdapter.updateItem(mBaseQustion, bindingAdapterPosition)
             update()
         } else {
             binding.signature.setImageBitmap(BitmapFactory.decodeFile(uri))
             mBaseQustion.setImageuri(ArrayList())
             mBaseQustion.setAnswer(Utils.getFormattedDateSimple(Calendar.getInstance().timeInMillis))
             mBaseQustion.getImageuri()?.add(uri)
-            qustionAdapter.updateItem(mBaseQustion, adapterPosition)
+            qustionAdapter.updateItem(mBaseQustion, bindingAdapterPosition)
             update()
         }
     }
@@ -640,7 +641,7 @@ class StartViewHolder(
             binding.guidLine.visibility = VISIBLE
             binding.guidLine.text = state[which].name
             mBaseQustion.setAnswer("$which")
-            qustionAdapter.updateItem(mBaseQustion, adapterPosition)
+            qustionAdapter.updateItem(mBaseQustion, bindingAdapterPosition)
             update()
             dialog.dismiss()
         }
@@ -663,7 +664,7 @@ class StartViewHolder(
     private fun showLgaDilog() {
         var lgas =
             prefHelper.getState().state[Integer.parseInt(
-                qustionAdapter.getItem(adapterPosition - 1).getAnswer().toString()
+                qustionAdapter.getItem(bindingAdapterPosition - 1).getAnswer().toString()
             )].lgas
         var alertDialog = AlertDialog.Builder(binding.root.context)
         alertDialog.setTitle(mBaseQustion.getTittle())
@@ -682,7 +683,7 @@ class StartViewHolder(
             binding.guidLine.visibility = VISIBLE
             binding.guidLine.text = lgas[which].name
             mBaseQustion.setAnswer("$which")
-            qustionAdapter.updateItem(mBaseQustion, adapterPosition)
+            qustionAdapter.updateItem(mBaseQustion, bindingAdapterPosition)
             update()
             dialog.dismiss()
         }
@@ -705,9 +706,9 @@ class StartViewHolder(
     private fun showWardDilog() {
         var wards =
             prefHelper.getState().state[Integer.parseInt(
-                qustionAdapter.getItem(adapterPosition - 2).getAnswer().toString()
+                qustionAdapter.getItem(bindingAdapterPosition - 2).getAnswer().toString()
             )].lgas[Integer.parseInt(
-                qustionAdapter.getItem(adapterPosition - 1).getAnswer().toString()
+                qustionAdapter.getItem(bindingAdapterPosition - 1).getAnswer().toString()
             )].wards
         var alertDialog = AlertDialog.Builder(binding.root.context)
         alertDialog.setTitle(mBaseQustion.getTittle())
@@ -726,7 +727,7 @@ class StartViewHolder(
             binding.guidLine.visibility = VISIBLE
             binding.guidLine.text = wards[which].name
             mBaseQustion.setAnswer("$which")
-            qustionAdapter.updateItem(mBaseQustion, adapterPosition)
+            qustionAdapter.updateItem(mBaseQustion, bindingAdapterPosition)
             update()
             dialog.dismiss()
         }

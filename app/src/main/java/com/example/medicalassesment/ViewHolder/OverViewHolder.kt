@@ -73,7 +73,7 @@ class OverViewHolder : RecyclerView.ViewHolder {
                 var parms = LinearLayout.LayoutParams(marginParams)
                 imageView.layoutParams = parms
                 binding.ImageLayout.visibility = VISIBLE
-                Glide.with(imageView)
+                GlideApp.with(imageView)
                     .applyDefaultRequestOptions(RequestOptions().override(100, 100))
                     .load(it)
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
@@ -129,7 +129,7 @@ class OverViewHolder : RecyclerView.ViewHolder {
             QUSTION_TYPE_SIGNATURE -> {
                 if(!baseQuestion.imageUris.isNullOrEmpty()){
                     binding.signature.scaleType=ImageView.ScaleType.FIT_XY
-                    Glide.with(binding.signature)
+                    GlideApp.with(binding.signature)
                         .load(baseQuestion.imageUris!![0])
                         .into(binding.signature)
 
@@ -151,7 +151,7 @@ class OverViewHolder : RecyclerView.ViewHolder {
         binding.radioNo.setOnCheckedChangeListener { _, g ->
             if (g) {
                 baseQuestion.answer = "0"
-                previewAdapter.updateItem(baseQuestion, adapterPosition)
+                previewAdapter.updateItem(baseQuestion, bindingAdapterPosition)
 
                 GlobalScope.launch {
                     dao.update(baseQuestion)
@@ -161,7 +161,7 @@ class OverViewHolder : RecyclerView.ViewHolder {
         binding.radioYes.setOnCheckedChangeListener { _, g ->
             if (g) {
                 baseQuestion.answer = "1"
-                previewAdapter.updateItem(baseQuestion, adapterPosition)
+                previewAdapter.updateItem(baseQuestion, bindingAdapterPosition)
 
                 GlobalScope.launch {
                     dao.update(baseQuestion)
@@ -183,7 +183,7 @@ class OverViewHolder : RecyclerView.ViewHolder {
             binding.guidLine.visibility = VISIBLE
             binding.guidLine.text = questionModel.dropDownItems?.get(which) ?: ""
             questionModel.answer = "$which"
-            previewAdapter.updateItem(questionModel, adapterPosition)
+            previewAdapter.updateItem(questionModel, bindingAdapterPosition)
 
             GlobalScope.launch {
                 dao.update(questionModel)
@@ -212,7 +212,7 @@ class OverViewHolder : RecyclerView.ViewHolder {
             if (questionModel.imageUris == null)
                 questionModel.imageUris = ArrayList()
             questionModel.imageUris?.add(uri)
-            previewAdapter.updateItem(questionModel, adapterPosition)
+            previewAdapter.updateItem(questionModel, bindingAdapterPosition)
             GlobalScope.launch {
                 dao.update(questionModel)
             }
@@ -221,7 +221,7 @@ class OverViewHolder : RecyclerView.ViewHolder {
                 questionModel.imageUris = ArrayList()
             questionModel.answer=Utils.getFormattedDateSimple(Calendar.getInstance().timeInMillis)
             questionModel.imageUris?.add(uri)
-            previewAdapter.updateItem(questionModel, adapterPosition)
+            previewAdapter.updateItem(questionModel, bindingAdapterPosition)
             GlobalScope.launch {
                 dao.update(questionModel)
             }

@@ -10,6 +10,7 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.signature.ObjectKey
+import com.example.medicalassesment.GlideApp
 import com.example.medicalassesment.R
 import java.io.File
 import java.util.jar.Attributes
@@ -55,7 +56,7 @@ class BaseImageView : LinearLayout {
 
     fun loadImage(imageUri: String) {
         this.imageUri = imageUri
-        Glide.with(imageView)
+        GlideApp.with(imageView)
             .applyDefaultRequestOptions(RequestOptions().override(200, 200))
             .load(imageUri)
             .diskCacheStrategy(DiskCacheStrategy.ALL)
