@@ -109,6 +109,7 @@ class QuestionModel : BaseQustion {
     }
 
     override fun getImageuri(): ArrayList<String>? {
+
         this.imageUris.let { return it ?: ArrayList() }
     }
 

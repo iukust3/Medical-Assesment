@@ -64,4 +64,15 @@ class BaseImageView : LinearLayout {
             .into(imageView)
         imageView.scaleType = ImageView.ScaleType.FIT_XY
     }
+    fun loadImage(imageUri: File) {
+
+        GlideApp.with(imageView)
+            .applyDefaultRequestOptions(RequestOptions().override(200, 200))
+            .load(imageUri)
+            .diskCacheStrategy(DiskCacheStrategy.ALL)
+            .signature(ObjectKey(imageUri))
+            .into(imageView)
+        imageView.scaleType = ImageView.ScaleType.FIT_XY
+        this.imageUri = imageUri.absolutePath
+    }
 }

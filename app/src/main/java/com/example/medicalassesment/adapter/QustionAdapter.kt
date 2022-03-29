@@ -68,11 +68,22 @@ class QustionAdapter() : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         }
     }
 
-    fun updateItem(questionModel: BaseQustion, index: Int) {
+    fun updateItem(questionModel: BaseQustion) {
         qustionList.forEach {
             if (it.getId() == questionModel.getId()) {
                 questionModel.setAnswer(it.getAnswer())
-                questionModel.getImageuri()?.let { it1 -> it.setImageuri(it1) }
+                questionModel.getImageuri()?.let { it1 -> it.setImageuri(it1)
+                }
+            }
+        }
+    }
+    fun updateItem(questionModel: BaseQustion,index:Int) {
+        qustionList.forEach {
+            if (it.getId() == questionModel.getId()) {
+                questionModel.setAnswer(it.getAnswer())
+                questionModel.getImageuri()?.let { it1 -> it.setImageuri(it1)
+                    notifyItemChanged(index)
+                }
             }
         }
     }

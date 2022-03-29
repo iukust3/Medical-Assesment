@@ -1,9 +1,11 @@
 package com.example.medicalassesment.Fragments
 
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.graphics.ImageDecoder
 import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
@@ -31,10 +33,15 @@ import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.StateListDrawable
 import androidx.core.content.ContextCompat
 import android.graphics.drawable.DrawableContainer.DrawableContainerState
+import android.net.Uri
+import android.os.Build
+import android.provider.MediaStore
 import android.widget.EditText
+import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import com.example.medicalassesment.Activities.BaseActivity
 import com.example.medicalassesment.Helper.ScoreCalculator
+import com.example.medicalassesment.Interfaces.QustionViewHolderInterface
 
 
 /**
@@ -216,9 +223,9 @@ class SurveyFragment() : Fragment(), QustionAdapertInterface {
         } else {
             var scrollListener = object : RecyclerView.OnScrollListener() {
                 override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                    var view =
+                    val view =
                         mBinding.recyclerView.findViewHolderForAdapterPosition(position)
-                    var layout =
+                    val layout =
                         view?.itemView?.findViewById<LinearLayout>(R.id.main_layout)
                     if (lastView != null) {
                         val drawable = lastView.let {
@@ -286,4 +293,29 @@ class SurveyFragment() : Fragment(), QustionAdapertInterface {
     override fun processNextClick() {
         fragmentInteraction.onNextClick(index)
     }
+    fun onActivityResults(requestCode: Int, resultCode: Int, data: Intent?,position: Int,uri: Uri) {
+        if (requestCode == 200 && resultCode == Activity.RESULT_OK) {
+            try {
+                val source = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    val src: ImageDecoder.Source = ImageDecoder.createSource((activity as AppCompatActivity).contentResolver, uri)
+                    ImageDecoder.decodeBitmap(src)
+                }
+                else{
+                    @Suppress("DEPRECATION")
+                    MediaStore.Images.Media.getBitmap((activity as AppCompatActivity).contentResolver, uri)
+                }
+                // imageBitmap = Bitmap.createScaledBitmap(source, 100, 150, true)
+                (mBinding.recyclerView.findViewHolderForLayoutPosition(position) as QustionViewHolderInterface).onPictureDone(uri.toString())
+                //  QustionViewHolder.mQustionViewHolderInterface.onPictureDone(uri.toString())
+                source.recycle()
+            } catch (e: java.lang.Exception) {
+                e.printStackTrace()
+                //Try to recover
+            }
+        } else if (requestCode == 300 && resultCode == Activity.RESULT_OK) {
+            (mBinding.recyclerView.findViewHolderForLayoutPosition(position) as QustionViewHolderInterface).onPictureDone(uri.toString())
+        }
+        super.onActivityResult(requestCode, resultCode, data)
+    }
+
 }

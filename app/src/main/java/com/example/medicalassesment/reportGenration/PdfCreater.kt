@@ -614,7 +614,7 @@ class PdfCreater(val templateModel: TemplateModel, val context: Context) {
             var file = File(
                 Utils.getFolderPath(
                     context,
-                    questionModel.getId(),
+                    questionModel,
                     questionModel.getToolId()
                 )
             )
@@ -814,7 +814,7 @@ class PdfCreater(val templateModel: TemplateModel, val context: Context) {
             var file = File(
                 Utils.getFolderPath(
                     context,
-                    it.feedBackModel.getId(),
+                    it.feedBackModel,
                     it.feedBackModel.getToolId()
                 )
             )

@@ -20,14 +20,17 @@ import androidx.core.view.drawToBitmap
 import androidx.databinding.DataBindingUtil
 import com.example.medicalassesment.R
 import com.example.medicalassesment.Utials.Utils
+import com.example.medicalassesment.database.MedicalDataBase
 import com.example.medicalassesment.databinding.ActivitySignatureBinding
+import com.example.medicalassesment.models.FeedBackModel
 import java.io.File
 import java.io.FileOutputStream
 import java.lang.Exception
 
 class SignatureActivity : AppCompatActivity() {
     private lateinit var mBinding: ActivitySignatureBinding
-
+    private   var dao=MedicalDataBase.getInstance()?.getDao();
+    private lateinit var feedBackModel: FeedBackModel;
     @SuppressLint("CheckResult")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,6 +52,8 @@ class SignatureActivity : AppCompatActivity() {
                 )
             }
         }
+
+        feedBackModel= dao!!.getFeedBack(q_id);
         var path = intent.getStringExtra("Image")
         var id = intent.getIntExtra("QuestionID", 0);
         if (path != null) {
@@ -67,14 +72,14 @@ class SignatureActivity : AppCompatActivity() {
                 getBitmapFromView {
                     var file: File? = null
                     file = if (path.isNullOrEmpty())
-                        Utils.createImageFile(this, q_id, templateId)
+                        Utils.createImageFile(this, feedBackModel, templateId)
                     else File(path)
                     try {
                         try {
                             file?.delete()
                         } catch (e: Exception) {
                         }
-                        file=   Utils.createImageFile(this, q_id, templateId)
+                        file=   Utils.createImageFile(this, feedBackModel, templateId)
                         var ostream = FileOutputStream(file);
                         it.compress(Bitmap.CompressFormat.PNG, 10, ostream);
                         ostream.close();
@@ -95,14 +100,14 @@ class SignatureActivity : AppCompatActivity() {
                         var file: File? = null
 
                         file = if (path.isNullOrEmpty())
-                            Utils.createImageFile(this, q_id, templateId)
+                            Utils.createImageFile(this, feedBackModel, templateId)
                         else File(path)
                         try {
                             try {
                                 file?.delete()
                             } catch (e: Exception) {
                             }
-                            file=   Utils.createImageFile(this, q_id, templateId)
+                            file=   Utils.createImageFile(this, feedBackModel, templateId)
                             var ostream = FileOutputStream(file);
                             it.compress(Bitmap.CompressFormat.PNG, 10, ostream);
                             ostream.close();

@@ -32,9 +32,11 @@ import com.example.medicalassesment.Utials.Constant
 import com.example.medicalassesment.Utials.Constant.Companion.QUESTION_TYPE_YESNO
 import com.example.medicalassesment.Utials.Constant.Companion.QUESTION_TYPE_YESNO_WITH_COMMENT
 import com.example.medicalassesment.Utials.Constant.Companion.QUSTION_TYPE_DROPDOWN
+import com.example.medicalassesment.Utials.Utils
 import com.wdullaer.materialdatetimepicker.date.DatePickerDialog
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -104,10 +106,20 @@ class PreviewItem @JvmOverloads constructor(
             mBinding.subTittle.text = mQuestionModel.getSubTittle()
             mBinding.subTittle.visibility = View.VISIBLE
         }
-        if (!baseQuestion.getImageuri().isNullOrEmpty() && baseQuestion.getQuestionTypeId() != Constant.QUSTION_TYPE_SIGNATURE) {
+        if (baseQuestion.getQuestionTypeId() != Constant.QUSTION_TYPE_SIGNATURE) {
             mBinding.ImageLayout.visibility = View.VISIBLE
             mBinding.ImageLayout.removeAllViews()
-            baseQuestion.getImageuri()?.forEach {
+
+            val folder = File(
+                Utils.getFolderPath(
+                    context,
+                    baseQuestion,
+                    baseQuestion.getToolId()
+                )
+            )
+            val listImages = folder.listFiles()
+            if(!listImages.isNullOrEmpty())
+           listImages.forEach {
                 /*  val source =
                       MediaStore.Images.Media.getBitmap((context as Activity).contentResolver, it)
                   var imageBitmap = Bitmap.createScaledBitmap(source, 100, 150, true)
@@ -135,6 +147,10 @@ class PreviewItem @JvmOverloads constructor(
                 //  source.recycle()
                 mBinding.ImageLayout.visibility = View.VISIBLE
             }
+            else {
+                mBinding.ImageLayout.visibility = View.VISIBLE
+                mBinding.ImageLayout.removeAllViews()
+            }
         } else {
             mBinding.ImageLayout.visibility = View.GONE
         }
@@ -142,18 +158,35 @@ class PreviewItem @JvmOverloads constructor(
         if (baseQuestion.getQuestionTypeId() == Constant.QUSTION_TYPE_SIGNATURE) {
             mBinding.signature.scaleType = ImageView.ScaleType.FIT_XY
             mBinding.signature.visibility = View.VISIBLE
-            try {
-                Log.e("TAG", "Signature " + baseQuestion.getImageuri()!![0])
-                Glide.with(mBinding.signature)
-                    .applyDefaultRequestOptions(RequestOptions().override(500, 500))
-                    .load(baseQuestion.getImageuri()!![0])
-                    .diskCacheStrategy(DiskCacheStrategy.ALL)
-                    .signature(ObjectKey(baseQuestion.getQuestionTypeId() + "" + baseQuestion.getId() + "_" + baseQuestion.getTittle()))
-                    .into(mBinding.signature)
-            } catch (e: Exception) {
+            mBinding.ImageLayout.removeAllViews()
+
+            val folder = File(
+                Utils.getFolderPath(
+                    context,
+                    baseQuestion,
+                    baseQuestion.getToolId()
+                )
+            )
+            val listImages = folder.listFiles()
+            if(!listImages.isNullOrEmpty())
+                listImages.forEach {
+                    try {
+                        Glide.with(mBinding.signature)
+                            .applyDefaultRequestOptions(RequestOptions().override(500, 500))
+                            .load(it)
+                            .diskCacheStrategy(DiskCacheStrategy.ALL)
+                            .signature(ObjectKey(baseQuestion.getQuestionTypeId() + "" + baseQuestion.getId() + "_" + baseQuestion.getTittle()))
+                            .into(mBinding.signature)
+                    } catch (e: Exception) {
+                        mBinding.signature.setImageDrawable(null)
+                        mBinding.signature.visibility= GONE
+                    }
+                }
+            else {
                 mBinding.signature.setImageDrawable(null)
                 mBinding.signature.visibility= GONE
             }
+
         }
         mBinding.title.text = mQuestionModel.getTittle()
         if (!baseQuestion.getGuideline().isNullOrEmpty()) {

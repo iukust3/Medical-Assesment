@@ -3,7 +3,6 @@ package com.example.medicalassesment.ViewHolder
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
-import android.content.DialogInterface
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.BitmapFactory
@@ -31,14 +30,9 @@ import com.example.medicalassesment.databinding.NewItemLayoutBinding
 import android.view.ViewGroup.MarginLayoutParams
 import android.view.inputmethod.EditorInfo
 import android.widget.Toast
-import androidx.appcompat.widget.AppCompatRadioButton
 import androidx.core.content.ContextCompat
 import androidx.core.widget.CompoundButtonCompat
-import androidx.core.widget.doOnTextChanged
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
-import com.bumptech.glide.signature.ObjectKey
 import com.example.medicalassesment.Activities.BaseActivity
 import com.example.medicalassesment.Activities.SignatureActivity
 import com.example.medicalassesment.GlideApp
@@ -46,7 +40,6 @@ import com.example.medicalassesment.adapter.QustionAdapter
 import com.example.medicalassesment.database.Dao
 import com.example.medicalassesment.database.MedicalDataBase
 import com.example.medicalassesment.R
-import com.example.medicalassesment.Utials.Constant
 import com.example.medicalassesment.Utials.Constant.Companion.QUSTION_TYPE_DATEFUTURE
 import com.example.medicalassesment.Utials.Constant.Companion.QUSTION_TYPE_DATEPAST
 import com.example.medicalassesment.Utials.Constant.Companion.QUSTION_TYPE_MULTICHICE
@@ -55,7 +48,6 @@ import com.example.medicalassesment.Utials.Constant.Companion.QUSTION_TYPE_SIGNA
 import com.example.medicalassesment.Utials.Utils
 import com.example.medicalassesment.models.*
 import com.example.medicalassesment.uIItems.BaseImageView
-import com.google.gson.Gson
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -67,15 +59,6 @@ import kotlin.collections.ArrayList
 @DelicateCoroutinesApi
 class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
     private val dao: Dao
-
-    companion object {
-        lateinit var previousLayout: LinearLayout
-        lateinit var mQustionViewHolderInterface: QustionViewHolderInterface
-        fun getQustionInterface(): QustionViewHolderInterface {
-            return mQustionViewHolderInterface
-        }
-    }
-
     private var binding: NewItemLayoutBinding
     private var context: Context
     private lateinit var mBaseQustion: BaseQustion
@@ -90,7 +73,6 @@ class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
         qustionAdapter: QustionAdapter
     ) : super(view.root) {
         dao = MedicalDataBase.getInstance(view.root.context).getDao()
-        mQustionViewHolderInterface = this
         this.binding = view
         this.context = view.root.context
         this.templateModel = BaseActivity.templateModel
@@ -141,7 +123,7 @@ class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
             var qustionTextWatcher = object : TextWatcher {
                 override fun afterTextChanged(s: Editable?) {
                     mBaseQustion.setAnswer(s.toString())
-                    qustionAdapter.updateItem(mBaseQustion, bindingAdapterPosition)
+                    qustionAdapter.updateItem(mBaseQustion)
                     if (questionModel.getQuestionTypeId() == QUSTION_TYPE_EMAIL) {
                         if (!s.isNullOrEmpty()) {
                             if (!Patterns.EMAIL_ADDRESS.matcher(s).matches()) {
@@ -190,59 +172,55 @@ class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
             binding.etqustion.addTextChangedListener(qustionTextWatcher)
         }
         binding.takeImage.setOnClickListener {
-            mQustionViewHolderInterface = this
-            (context as SurveyActivity).takePicture(mBaseQustion, binding.ImageLayout)
+             (context as SurveyActivity).takePicture(mBaseQustion,bindingAdapterPosition)
         }
         if (mBaseQustion.getImageuri() == null || mBaseQustion.getQuestionTypeId() == QUSTION_TYPE_SIGNATURE)
             binding.ImageLayout.visibility = GONE
         else {
             binding.ImageLayout.removeAllViews()
-            mBaseQustion.getImageuri()?.forEach {
-                /*  val source =
-                      MediaStore.Images.Media.getBitmap((context as Activity).contentResolver, it)
-                  var imageBitmap = Bitmap.createScaledBitmap(source, 100, 150, true)
-               */
-                var imageView = BaseImageView(context)
-
-                imageView.layoutParams = LinearLayout.LayoutParams(
-                    200,
-                    200
+            val folder = File(
+                Utils.getFolderPath(
+                    context,
+                    questionModel,
+                    questionModel.getToolId()
                 )
-                val marginParams =
-                    MarginLayoutParams(imageView.layoutParams as LinearLayout.LayoutParams)
-                marginParams.setMargins(20, 20, 10, 20)
-                val parms = LinearLayout.LayoutParams(marginParams)
-                imageView.layoutParams = parms
-                binding.ImageLayout.visibility = VISIBLE
-                imageView.loadImage(it)
-                imageView.onDelete = {
-                    val folder = File(
-                        Utils.getFolderPath(
-                            context,
-                            questionModel.getId(),
-                            questionModel.getToolId()
-                        )
+            )
+            val listImages = folder.listFiles()
+            if(!listImages.isNullOrEmpty())
+                listImages.forEach { file->
+
+                    /*  val source =
+                          MediaStore.Images.Media.getBitmap((context as Activity).contentResolver, it)
+                      var imageBitmap = Bitmap.createScaledBitmap(source, 100, 150, true)
+                   */
+                    val imageView = BaseImageView(context)
+
+                    imageView.layoutParams = LinearLayout.LayoutParams(
+                        200,
+                        200
                     )
-                    val listofImages = folder.listFiles()
-                    listofImages.forEach {file->
-                        var spliter=it.split("/")
-                        if(file.name==spliter[spliter.size-1]){
-                            if(file.delete()){
-                                mBaseQustion.getImageuri()!!.remove(it)
-                                binding.ImageLayout.removeView(imageView)
-                                qustionAdapter.notifyItemChanged(bindingAdapterPosition)
-                                update()
-                            }else {
-                                Toast.makeText(context,"Error while delete Image", Toast.LENGTH_LONG).show()
-                            }
+                    val marginParams =
+                        MarginLayoutParams(imageView.layoutParams as LinearLayout.LayoutParams)
+                    marginParams.setMargins(20, 20, 10, 20)
+                    val parms = LinearLayout.LayoutParams(marginParams)
+                    imageView.layoutParams = parms
+                    binding.ImageLayout.visibility = VISIBLE
+                    imageView.loadImage(file)
+                    imageView.onDelete = {
+                       try {
+                            mBaseQustion.getImageuri()!!.removeAt(binding.ImageLayout.indexOfChild(imageView))
+                        } catch (e: Exception) {
+                            e.printStackTrace();
                         }
+                        binding.ImageLayout.removeView(imageView)
+                        qustionAdapter.notifyItemChanged(bindingAdapterPosition)
+                        update()
+                        Log.e("TAG", " Image deleted ")
                     }
-                    Log.e("TAG", " Image deleted ")
+                    binding.ImageLayout.addView(imageView)
+                    //  source.recycle()
+                    binding.ImageLayout.visibility = VISIBLE
                 }
-                binding.ImageLayout.addView(imageView)
-                //  source.recycle()
-                binding.ImageLayout.visibility = VISIBLE
-            }
         }
         binding.etqustion.error = null
         when (mBaseQustion.getQuestionTypeId()) {
@@ -257,7 +235,6 @@ class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
                         binding.etqustion.setText(mBaseQustion.getCurrentComments().toString())
                 } catch (e: Exception) {
                 }
-
                 binding.etqustion.addTextChangedListener(object : TextWatcher {
                     override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
 
@@ -412,36 +389,43 @@ class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
                 binding.takeImage.visibility = GONE
             }
             QUSTION_TYPE_SIGNATURE -> {
-                if (!mBaseQustion.getImageuri().isNullOrEmpty()) {
-                    binding.signature.scaleType = ImageView.ScaleType.FIT_XY
-                    GlideApp.with(binding.signature)
-                        .setDefaultRequestOptions(RequestOptions().override(500, 500))
-                        .load(mBaseQustion.getImageuri()!![0])
-                        .into(binding.signature)
-                    binding.guidLine.text = mBaseQustion.getAnswer()
-                    binding.guidLine.visibility = VISIBLE
-                } else {
+
+                val folder = File(
+                    Utils.getFolderPath(
+                        context,
+                        questionModel,
+                        questionModel.getToolId()
+                    )
+                )
+                val listofImages = folder.listFiles()
+                if(!listofImages.isNullOrEmpty())
+                    listofImages.forEach {file->
+
+                        /*  val source =
+                              MediaStore.Images.Media.getBitmap((context as Activity).contentResolver, it)
+                          var imageBitmap = Bitmap.createScaledBitmap(source, 100, 150, true)
+                       */
+                        binding.signature.scaleType = ImageView.ScaleType.FIT_XY
+                        GlideApp.with(binding.signature)
+                            .setDefaultRequestOptions(RequestOptions().override(500, 500))
+                            .load(file)
+                            .into(binding.signature)
+                        binding.guidLine.text = mBaseQustion.getAnswer()
+                        binding.guidLine.visibility = VISIBLE
+                    }
+                else{
                     binding.signature.setImageDrawable(null)
                 }
                 binding.takeImage.visibility = VISIBLE
                 binding.signature.visibility = VISIBLE
                 binding.takeImage.setImageResource(R.drawable.ic_signature)
                 binding.takeImage.setOnClickListener {
-                    mQustionViewHolderInterface = this
-                    var intent = Intent(context, SignatureActivity::class.java)
-                    try {
-                        intent.putExtra("Image", mBaseQustion.getImageuri()?.get(0))
-                        intent.putExtra("TemplateID", mBaseQustion.getToolId())
-                        intent.putExtra("QuestionID", questionModel.getId())
-                    } catch (e: Exception) {
-                        intent.putExtra("Image", "")
-                        intent.putExtra("TemplateID", mBaseQustion.getToolId())
-                        intent.putExtra("QuestionID", questionModel.getId())
-                    }
-                    intent.putExtra("QuestionID", mBaseQustion.getId())
-                    (context as Activity).startActivityForResult(intent, 300)
-                }
-            }
+                    if(listofImages.isNullOrEmpty())
+                        (context as SurveyActivity).startActivityForSignature(bindingAdapterPosition,
+                            questionModel,"" )
+                    else   (context as SurveyActivity).startActivityForSignature(bindingAdapterPosition,
+                        questionModel,listofImages[0].absolutePath )
+                } }
             QUSTION_TYPE_MULTICHICE -> {
                 try {
                     binding.dateTime.text = "Select Response"

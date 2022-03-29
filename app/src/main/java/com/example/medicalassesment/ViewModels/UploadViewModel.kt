@@ -113,7 +113,7 @@ class UploadViewModel : ViewModel() {
                 var file = File(
                     Utils.getFolderPath(
                         MyApplication.APPLICATION,
-                        it.getId(),
+                        it,
                         it.template_id
                     )
                 )
@@ -144,7 +144,7 @@ class UploadViewModel : ViewModel() {
                         var file = File(
                             Utils.getFolderPath(
                                 MyApplication.APPLICATION,
-                                it.getId(),
+                                it,
                                 it.template_id
                             )
                         )
@@ -180,7 +180,7 @@ class UploadViewModel : ViewModel() {
                         val file = File(
                             Utils.getFolderPath(
                                 MyApplication.APPLICATION,
-                                it.getId(),
+                                it,
                                 it.template_id
                             )
                         )

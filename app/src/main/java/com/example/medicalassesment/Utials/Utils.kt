@@ -22,6 +22,7 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import androidx.annotation.RequiresApi
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.example.medicalassesment.models.BaseQustion
 
 
 class Utils {
@@ -78,11 +79,11 @@ class Utils {
             return storageDir.absolutePath
         }
 
-        fun getFolderPath(context: Context, question_id: Int, tampletId: String?): String {
+        fun getFolderPath(context: Context, question_id: BaseQustion, tampletId: String?): String {
             val storageDir: File = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-                File(Environment.getExternalStorageDirectory().absolutePath + "/PCN Inspection Images/" + tampletId + "_images" + "/" + question_id + "_images")
+                File(Environment.getExternalStorageDirectory().absolutePath + "/PCN Inspection Images/" + tampletId + "_images" + "/"+ question_id.getId()+"_"+question_id.getTittle()?.replace(" ","_") + "_images")
             } else {
-                File(context.getExternalFilesDir(Environment.DIRECTORY_DCIM)?.absolutePath + "/PCN Inspection Images/" + tampletId + "_images" + "/" + question_id + "_images")
+                File(context.getExternalFilesDir(Environment.DIRECTORY_DCIM)?.absolutePath + "/PCN Inspection Images/" + tampletId + "_images" + "/" + question_id.getId()+"_"+question_id.getTittle()?.replace(" ","_") + "_images")
             }
 
             return storageDir.absolutePath
@@ -255,23 +256,23 @@ class Utils {
 
         fun createImageFile(
             context: Context,
-            qustion_id: Int,
+            qustion_id: BaseQustion,
             number: Int,
             tampletId: String?
         ): File {
             val storageDir: File
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
                 storageDir =
-                    File(Environment.getExternalStorageDirectory().absolutePath + "/PCN Inspection Images/" + tampletId + "_images" + "/" + qustion_id + "_images")
+                    File(Environment.getExternalStorageDirectory().absolutePath + "/PCN Inspection Images/" + tampletId + "_images" + "/" + qustion_id.getId()+"_"+qustion_id.getTittle()?.replace(" ","_") + "_images")
             } else {
                 storageDir =
-                    File(context.getExternalFilesDir(Environment.DIRECTORY_DCIM)?.absolutePath + "/PCN Inspection Images/" + tampletId + "_images" + "/" + qustion_id + "_images")
+                    File(context.getExternalFilesDir(Environment.DIRECTORY_DCIM)?.absolutePath + "/PCN Inspection Images/" + tampletId + "_images" + "/"+ qustion_id.getId()+"_"+qustion_id.getTittle()?.replace(" ","_") + "_images")
                 if (!storageDir.exists()) {
                     storageDir.mkdirs()
                 }
             }
             storageDir.mkdirs()
-            val image: File? = File(storageDir, "${qustion_id}_${number}_image.png")
+            val image: File? = File(storageDir, "${qustion_id.getId()}_${number}_image.png")
             Log.e("TAG", "File  " + image?.absolutePath)
             if (image?.exists()!!)
                 return image
@@ -285,20 +286,20 @@ class Utils {
             return image
         }
 
-        fun createImageFile(context: Context, qustion_id: Int, tampletId: String?): File? {
+        fun createImageFile(context: Context, qustion_id: BaseQustion, tampletId: String?): File? {
             val storageDir: File = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 
                 var base=    File(context.getExternalFilesDir(Environment.DIRECTORY_DCIM)?.absolutePath + "/PCN Inspection Images/")
                 base.mkdir();
-                base=File(base.absolutePath+"/"+ tampletId + "_images" + "/" + qustion_id + "_images")
+                base=File(base.absolutePath+"/"+ tampletId + "_images" + "/" + qustion_id.getId()+"_"+qustion_id.getTittle()?.replace(" ","_") + "_images")
                 base.mkdirs()
                 base
             }  else {
-                File(Environment.getExternalStorageDirectory().absolutePath + "/PCN Inspection Images/" + tampletId + "_images" + "/" + qustion_id + "_images");
+                File(Environment.getExternalStorageDirectory().absolutePath + "/PCN Inspection Images/" + tampletId + "_images" + "/"+ qustion_id.getId()+"_"+qustion_id.getTittle()?.replace(" ","_") + "_images");
             }
             deleteRecursive(storageDir)
             storageDir.mkdirs()
-            val image: File? = File(storageDir, "${qustion_id}_image.png")
+            val image: File? = File(storageDir, "${qustion_id.getId()}_image.png")
             Log.e("TAG", "File  " + image?.absolutePath)
             if (image?.exists()!!)
                 return image

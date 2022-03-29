@@ -14,7 +14,6 @@ import android.location.Location
 import android.text.Editable
 import android.text.InputType
 import android.text.TextWatcher
-import android.util.Log
 import android.util.Patterns
 import android.view.View.*
 import android.view.WindowManager
@@ -34,7 +33,6 @@ import android.view.inputmethod.EditorInfo
 import android.widget.TextView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.signature.ObjectKey
@@ -174,7 +172,7 @@ class StartViewHolder(
         })
         binding.takeImage.setOnClickListener {
             mQustionViewHolderInterface = this
-            (context as SurveyActivity).takePicture(mBaseQustion, binding.ImageLayout)
+            (context as SurveyActivity).takePicture(mBaseQustion, bindingAdapterPosition)
         }
         if (mBaseQustion.getImageuri() == null || mBaseQustion.getQuestionTypeId() == QUSTION_TYPE_SIGNATURE)
             binding.ImageLayout.visibility = GONE

@@ -35,6 +35,8 @@ interface Dao {
 
     @Query("SELECT * FROM FeedBackModel WHERE template_id=:tampletId")
     fun getFeedBack(tampletId: String): LiveData<List<FeedBackModel>>
+@Query("SELECT * FROM FeedBackModel WHERE id=:tampletId")
+    fun getFeedBack(tampletId: Int): FeedBackModel
 
     @Query("SELECT * FROM PreliminaryInfoModel WHERE template_id=:tampletId AND questiontype!='default'")
     fun getPrelimanryInfo(tampletId: String): LiveData<List<PreliminaryInfoModel>>

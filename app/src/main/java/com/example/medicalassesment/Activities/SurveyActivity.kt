@@ -237,9 +237,11 @@ class SurveyActivity : BaseActivity(), FragmentInteraction {
 
     private lateinit var questionModel: BaseQustion
     private lateinit var imageLayout: LinearLayout
-    override fun takePicture(questionModel: BaseQustion, linearLayout: LinearLayout) {
+    private  var position: Int=-1
+    override fun takePicture(questionModel: BaseQustion,position: Int) {
+        Log.e("TAG","Position $position")
         this.questionModel = questionModel
-        this.imageLayout = linearLayout
+        this.position=position;
         when {
             ActivityCompat.checkSelfPermission(
                 this@SurveyActivity,
@@ -290,7 +292,7 @@ class SurveyActivity : BaseActivity(), FragmentInteraction {
                 }
                 uri = Utils.createImageFile(
                     this@SurveyActivity,
-                    questionModel.getId(),
+                    questionModel,
                     number,
                     questionModel.getToolId()
                 ).let {
@@ -305,50 +307,6 @@ class SurveyActivity : BaseActivity(), FragmentInteraction {
                 takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, uri)
                 takePictureIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 startActivityForResult(takePictureIntent, 200)
-               /* requestCode=200;
-                myActivityResultLauncher.launch(takePictureIntent)*/
-            /* registerForActivityResult(
-                    ActivityResultContracts.StartActivityForResult()
-                ) {
-                    if (it.resultCode == RESULT_OK) {
-                        try {
-                            val source = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                                val src: ImageDecoder.Source = ImageDecoder.createSource(contentResolver, uri)
-                                ImageDecoder.decodeBitmap(src)
-                            }
-                            else{
-                                @Suppress("DEPRECATION")
-                                MediaStore.Images.Media.getBitmap(contentResolver, uri)
-                            }
-                             // imageBitmap = Bitmap.createScaledBitmap(source, 100, 150, true)
-                            val imageView = BaseImageView(this)
-
-                            imageView.layoutParams = LinearLayout.LayoutParams(
-                                200,
-                                200
-                            )
-
-                            imageLayout.visibility = View.VISIBLE
-                            val marginParams =
-                                ViewGroup.MarginLayoutParams(imageView.layoutParams as LinearLayout.LayoutParams)
-                            marginParams.setMargins(20, 20, 10, 20)
-                            val parms = LinearLayout.LayoutParams(marginParams)
-                            imageView.layoutParams = parms
-                            imageView.loadImage(uri.toString())
-                            imageLayout.addView(imageView)
-                            imageView.onDelete = {
-                                imageLayout.removeView(imageView)
-                                QustionViewHolder.mQustionViewHolderInterface.onImageDelete(uri.toString())
-                            }
-                            QustionViewHolder.mQustionViewHolderInterface.onPictureDone(uri.toString())
-
-                            source.recycle()
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                            //Try to recover
-                        }
-                    }
-                }.launch(takePictureIntent)*/
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -364,55 +322,31 @@ Log.e("TAG","Null error")
         Log.e("TAG","Start activity with code "+requestCode);
     }
 private var requestCode =-10;
-      fun onActivityResults(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (requestCode == 200 && resultCode == RESULT_OK) {
-             try {
-                val source = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    val src: ImageDecoder.Source = ImageDecoder.createSource(contentResolver, uri)
-                    ImageDecoder.decodeBitmap(src)
-                }
-                else{
-                    @Suppress("DEPRECATION")
-                    MediaStore.Images.Media.getBitmap(contentResolver, uri)
-                }
-                // imageBitmap = Bitmap.createScaledBitmap(source, 100, 150, true)
-                var imageView = BaseImageView(this)
-
-                imageView.layoutParams = LinearLayout.LayoutParams(
-                    200,
-                    200
-                )
-
-                imageLayout.visibility = View.VISIBLE
-                val marginParams =
-                    ViewGroup.MarginLayoutParams(imageView.layoutParams as LinearLayout.LayoutParams)
-                marginParams.setMargins(20, 20, 10, 20)
-                var parms = LinearLayout.LayoutParams(marginParams)
-                imageView.layoutParams = parms
-                imageView.loadImage(uri.toString())
-                imageLayout.addView(imageView)
-                imageView.onDelete = {
-                    imageLayout.removeView(imageView)
-                    QustionViewHolder.mQustionViewHolderInterface.onImageDelete(uri.toString())
-                }
-                QustionViewHolder.mQustionViewHolderInterface.onPictureDone(uri.toString())
-                source.recycle()
-            } catch (e: Exception) {
-                e.printStackTrace()
-                //Try to recover
+    private fun onActivityResults(requestCode: Int, resultCode: Int, data: Intent?) {
+        val fragment = supportFragmentManager.findFragmentById(R.id.container);
+        if(fragment is SurveyFragment) {
+            if(uri== null){
+                uri=Uri.parse(data?.extras?.getString("Image"));
             }
-        } else if (requestCode == 300 && resultCode == Activity.RESULT_OK) {
-            val image=data?.extras?.getString("Image");
-            if(image!==null)
-            QustionViewHolder.mQustionViewHolderInterface.onPictureDone(image)
-            else
-            QustionViewHolder.mQustionViewHolderInterface.onPictureDone(file.absolutePath)
-        } else if (requestCode == 400 && resultCode == Activity.RESULT_OK) {
-            val fragment = supportFragmentManager.findFragmentById(R.id.container)
-            if (fragment is StartFragment)
-                fragment.onActivityResult(requestCode, resultCode, data)
+            fragment.onActivityResults(requestCode, resultCode, data, position, uri!!)
+        }else if(fragment is StartFragment)
+            fragment.onActivityResult(requestCode,resultCode,data)
+    }
+
+    fun startActivityForSignature(bindingAdapterPosition: Int, questionModel: BaseQustion,path:String) {
+        position=bindingAdapterPosition;
+        var intent = Intent(this, SignatureActivity::class.java)
+        try {
+            intent.putExtra("Image",path)
+            intent.putExtra("TemplateID", questionModel.getToolId())
+            intent.putExtra("QuestionID", questionModel.getId())
+        } catch (e: Exception) {
+            intent.putExtra("Image", "")
+            intent.putExtra("TemplateID", questionModel.getToolId())
+            intent.putExtra("QuestionID", questionModel.getId())
         }
-        super.onActivityResult(requestCode, resultCode, data)
+        intent.putExtra("QuestionID", questionModel.getId())
+        startActivityForResult(intent, 300)
     }
 
     fun insertData(
