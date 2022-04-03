@@ -1,6 +1,7 @@
 package com.example.medicalassesment.adapter
 
 import android.content.Context
+import android.net.Uri
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -15,6 +16,9 @@ import com.example.medicalassesment.models.QuestionModel
 import com.example.medicalassesment.ViewHolder.OverViewHolder
 import com.example.medicalassesment.ViewHolder.QustionViewHolder
 import com.example.medicalassesment.databinding.NewItemLayoutBinding
+import java.sql.Timestamp
+import java.util.*
+import kotlin.collections.ArrayList
 
 class QustionAdapter() : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     private var qustionList: List<BaseQustion> = ArrayList()
@@ -81,11 +85,10 @@ class QustionAdapter() : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
         qustionList.forEach {
             if (it.getId() == questionModel.getId()) {
                 questionModel.setAnswer(it.getAnswer())
-                questionModel.getImageuri()?.let { it1 -> it.setImageuri(it1)
-                    notifyItemChanged(index)
-                }
-            }
+                questionModel.getImageuri()?.let { it1 -> it.setImageuri(it1) }
+                   }
         }
+
     }
 
     fun setList(it: List<QuestionModel>) {

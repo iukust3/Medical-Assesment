@@ -1,11 +1,8 @@
 package com.example.medicalassesment.ViewHolder
 
-import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
-import android.content.Intent
 import android.content.res.ColorStateList
-import android.graphics.BitmapFactory
 import android.graphics.drawable.ColorDrawable
 import android.text.Editable
 import android.text.InputType
@@ -29,12 +26,13 @@ import com.example.medicalassesment.Utials.Constant.Companion.QUESTION_TYPE_YESN
 import com.example.medicalassesment.databinding.NewItemLayoutBinding
 import android.view.ViewGroup.MarginLayoutParams
 import android.view.inputmethod.EditorInfo
-import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.core.widget.CompoundButtonCompat
+import com.bumptech.glide.load.Key
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
+import com.bumptech.glide.signature.ObjectKey
 import com.example.medicalassesment.Activities.BaseActivity
-import com.example.medicalassesment.Activities.SignatureActivity
 import com.example.medicalassesment.GlideApp
 import com.example.medicalassesment.adapter.QustionAdapter
 import com.example.medicalassesment.database.Dao
@@ -397,18 +395,19 @@ class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
                         questionModel.getToolId()
                     )
                 )
-                val listofImages = folder.listFiles()
-                if(!listofImages.isNullOrEmpty())
-                    listofImages.forEach {file->
-
-                        /*  val source =
-                              MediaStore.Images.Media.getBitmap((context as Activity).contentResolver, it)
-                          var imageBitmap = Bitmap.createScaledBitmap(source, 100, 150, true)
-                       */
-                        binding.signature.scaleType = ImageView.ScaleType.FIT_XY
+                val listImages = folder.listFiles()
+                if(!listImages.isNullOrEmpty())
+                    listImages.forEach { file->
+                         binding.signature.scaleType = ImageView.ScaleType.FIT_XY
+                      binding.signature.setImageDrawable(null)
                         GlideApp.with(binding.signature)
                             .setDefaultRequestOptions(RequestOptions().override(500, 500))
                             .load(file)
+                            .diskCacheStrategy(DiskCacheStrategy.NONE)
+                            .skipMemoryCache(true)
+                            .apply(RequestOptions().signature(ObjectKey(System.currentTimeMillis().toString())))
+                            .apply(RequestOptions.skipMemoryCacheOf(true))
+                            .apply(RequestOptions.diskCacheStrategyOf(DiskCacheStrategy.NONE))
                             .into(binding.signature)
                         binding.guidLine.text = mBaseQustion.getAnswer()
                         binding.guidLine.visibility = VISIBLE
@@ -420,11 +419,11 @@ class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
                 binding.signature.visibility = VISIBLE
                 binding.takeImage.setImageResource(R.drawable.ic_signature)
                 binding.takeImage.setOnClickListener {
-                    if(listofImages.isNullOrEmpty())
+                    if(listImages.isNullOrEmpty())
                         (context as SurveyActivity).startActivityForSignature(bindingAdapterPosition,
                             questionModel,"" )
                     else   (context as SurveyActivity).startActivityForSignature(bindingAdapterPosition,
-                        questionModel,listofImages[0].absolutePath )
+                        questionModel,listImages[0].absolutePath )
                 } }
             QUSTION_TYPE_MULTICHICE -> {
                 try {
@@ -582,7 +581,7 @@ class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
         if (mBaseQustion.getQuestionTypeId() != QUSTION_TYPE_SIGNATURE) {
             if (mBaseQustion.getImageuri() == null)
                 mBaseQustion.setImageuri(ArrayList())
-            var uris=mBaseQustion.getImageuri();
+            val uris=mBaseQustion.getImageuri();
            uris?.add(uri)
             mBaseQustion.setImageuri(uris)
             qustionAdapter.updateItem(mBaseQustion, bindingAdapterPosition)
@@ -591,11 +590,34 @@ class QustionViewHolder : RecyclerView.ViewHolder, QustionViewHolderInterface {
                 update()
             }
         } else {
-            binding.signature.setImageBitmap(BitmapFactory.decodeFile(uri))
+            val folder = File(
+                Utils.getFolderPath(
+                    context,
+                    mBaseQustion,
+                    mBaseQustion.getToolId()
+                )
+            )
+            val listImages = folder.listFiles()
+            if(!listImages.isNullOrEmpty())
+                listImages.forEach { file->
+                    binding.signature.scaleType = ImageView.ScaleType.FIT_XY
+                    binding.signature.setImageDrawable(null)
+                    GlideApp.with(binding.signature)
+                        .setDefaultRequestOptions(RequestOptions().override(500, 500))
+                        .load(file)
+                        .diskCacheStrategy(DiskCacheStrategy.NONE)
+                        .skipMemoryCache(true)
+                        .apply(RequestOptions().signature(ObjectKey(System.currentTimeMillis().toString())))
+                        .apply(RequestOptions.skipMemoryCacheOf(true))
+                        .apply(RequestOptions.diskCacheStrategyOf(DiskCacheStrategy.NONE))
+                        .into(binding.signature)
+                    binding.guidLine.text = mBaseQustion.getAnswer()
+                    binding.guidLine.visibility = VISIBLE
+                }
             mBaseQustion.setImageuri(ArrayList())
             mBaseQustion.setAnswer(Utils.getFormattedDateSimple(Calendar.getInstance().timeInMillis))
             mBaseQustion.getImageuri()?.add(uri)
-            qustionAdapter.updateItem(mBaseQustion, bindingAdapterPosition)
+            qustionAdapter.updateItem(mBaseQustion)
             GlobalScope.launch {
                 update()
             }

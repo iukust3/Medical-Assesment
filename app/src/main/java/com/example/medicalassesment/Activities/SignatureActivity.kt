@@ -54,23 +54,21 @@ class SignatureActivity : AppCompatActivity() {
         }
 
         feedBackModel= dao!!.getFeedBack(q_id);
-        var path = intent.getStringExtra("Image")
+        val path = intent.getStringExtra("Image")
         var id = intent.getIntExtra("QuestionID", 0);
         if (path != null) {
             /*   if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
                    mBinding.drawingView.background = BitmapFactory.
                } else mBinding.drawingView.setBackgroundDrawable(resource)
    */
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-                mBinding.drawingView.background = BitmapDrawable.createFromPath(path)
-            }
+            mBinding.drawingView.background = BitmapDrawable.createFromPath(path)
         }
 
         mBinding.save.setOnClickListener {
-            var newIntent = Intent()
+            val newIntent = Intent()
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 getBitmapFromView {
-                    var file: File? = null
+                    var file: File?
                     file = if (path.isNullOrEmpty())
                         Utils.createImageFile(this, feedBackModel, templateId)
                     else File(path)
@@ -80,12 +78,12 @@ class SignatureActivity : AppCompatActivity() {
                         } catch (e: Exception) {
                         }
                         file=   Utils.createImageFile(this, feedBackModel, templateId)
-                        var ostream = FileOutputStream(file);
+                        val ostream = FileOutputStream(file);
                         it.compress(Bitmap.CompressFormat.PNG, 10, ostream);
                         ostream.close();
                         SurveyActivity.file = file as File
 
-                        newIntent.putExtra("Image", file?.absolutePath)
+                        newIntent.putExtra("Image", file.absolutePath)
                         mBinding.drawingView.invalidate();
                     } catch (e: Exception) {
                         e.printStackTrace();
@@ -108,7 +106,7 @@ class SignatureActivity : AppCompatActivity() {
                             } catch (e: Exception) {
                             }
                             file=   Utils.createImageFile(this, feedBackModel, templateId)
-                            var ostream = FileOutputStream(file);
+                            val ostream = FileOutputStream(file);
                             it.compress(Bitmap.CompressFormat.PNG, 10, ostream);
                             ostream.close();
                             intent.putExtra("Image", file?.absolutePath)

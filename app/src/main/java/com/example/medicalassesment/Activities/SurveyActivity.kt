@@ -63,7 +63,7 @@ class SurveyActivity : BaseActivity(), FragmentInteraction {
 
     @Inject
     lateinit var viewModelFactory: ViewModelProvider.Factory
-    private lateinit var uri: Uri
+    private  var uri: Uri?=null
     lateinit var dataBiding: ActivitySurvayBinding
     lateinit var surveyViewModel: SurveyViewModel
     private var templetQustion: Template_questions? = null
@@ -325,9 +325,8 @@ private var requestCode =-10;
     private fun onActivityResults(requestCode: Int, resultCode: Int, data: Intent?) {
         val fragment = supportFragmentManager.findFragmentById(R.id.container);
         if(fragment is SurveyFragment) {
-            if(uri== null){
-                uri=Uri.parse(data?.extras?.getString("Image"));
-            }
+            if(uri==null)
+                uri=Uri.parse(data?.extras?.getString("Image"))
             fragment.onActivityResults(requestCode, resultCode, data, position, uri!!)
         }else if(fragment is StartFragment)
             fragment.onActivityResult(requestCode,resultCode,data)
@@ -335,7 +334,8 @@ private var requestCode =-10;
 
     fun startActivityForSignature(bindingAdapterPosition: Int, questionModel: BaseQustion,path:String) {
         position=bindingAdapterPosition;
-        var intent = Intent(this, SignatureActivity::class.java)
+        val intent = Intent(this, SignatureActivity::class.java)
+        Log.e("TAG","Title ${questionModel.getTittle()}")
         try {
             intent.putExtra("Image",path)
             intent.putExtra("TemplateID", questionModel.getToolId())

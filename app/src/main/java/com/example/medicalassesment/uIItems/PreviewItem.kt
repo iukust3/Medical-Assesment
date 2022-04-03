@@ -21,6 +21,7 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.signature.ObjectKey
 import com.example.medicalassesment.Activities.OverViewActivity
+import com.example.medicalassesment.GlideApp
 import com.example.medicalassesment.Helper.PrefHelper
 import com.example.medicalassesment.database.MedicalDataBase
 import com.example.medicalassesment.models.BaseQustion
@@ -124,7 +125,7 @@ class PreviewItem @JvmOverloads constructor(
                       MediaStore.Images.Media.getBitmap((context as Activity).contentResolver, it)
                   var imageBitmap = Bitmap.createScaledBitmap(source, 100, 150, true)
                */
-                var imageView = ImageView(context)
+                val imageView = ImageView(context)
 
                 imageView.layoutParams = LayoutParams(
                     LayoutParams.WRAP_CONTENT,
@@ -133,7 +134,7 @@ class PreviewItem @JvmOverloads constructor(
                 val marginParams =
                     MarginLayoutParams(imageView.layoutParams as LayoutParams)
                 marginParams.setMargins(20, 20, 10, 20)
-                var parms = LayoutParams(marginParams)
+                val parms = LayoutParams(marginParams)
                 imageView.layoutParams = parms
                 mBinding.ImageLayout.visibility = View.VISIBLE
                 Glide.with(imageView)
@@ -171,11 +172,14 @@ class PreviewItem @JvmOverloads constructor(
             if(!listImages.isNullOrEmpty())
                 listImages.forEach {
                     try {
-                        Glide.with(mBinding.signature)
-                            .applyDefaultRequestOptions(RequestOptions().override(500, 500))
+                        GlideApp.with(mBinding.signature)
+                            .setDefaultRequestOptions(RequestOptions().override(500, 500))
                             .load(it)
-                            .diskCacheStrategy(DiskCacheStrategy.ALL)
-                            .signature(ObjectKey(baseQuestion.getQuestionTypeId() + "" + baseQuestion.getId() + "_" + baseQuestion.getTittle()))
+                            .diskCacheStrategy(DiskCacheStrategy.NONE)
+                            .skipMemoryCache(true)
+                            .apply(RequestOptions().signature(ObjectKey(System.currentTimeMillis().toString())))
+                            .apply(RequestOptions.skipMemoryCacheOf(true))
+                            .apply(RequestOptions.diskCacheStrategyOf(DiskCacheStrategy.NONE))
                             .into(mBinding.signature)
                     } catch (e: Exception) {
                         mBinding.signature.setImageDrawable(null)
@@ -200,7 +204,6 @@ class PreviewItem @JvmOverloads constructor(
         } else*/
         mBinding.answerLable.text = mQuestionModel.getAnswer()
         mBinding.answerLable.layoutParams=LayoutParams(LayoutParams.MATCH_PARENT,LayoutParams.WRAP_CONTENT)
-        Log.e("TAG", "Answer :"+mQuestionModel.getAnswer())
         if (OverViewActivity.orignalModel.status == "completed") {
             mBinding.edit.visibility = View.GONE
         }

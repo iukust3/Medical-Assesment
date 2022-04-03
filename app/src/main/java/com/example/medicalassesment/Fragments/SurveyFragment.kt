@@ -294,28 +294,11 @@ class SurveyFragment() : Fragment(), QustionAdapertInterface {
         fragmentInteraction.onNextClick(index)
     }
     fun onActivityResults(requestCode: Int, resultCode: Int, data: Intent?,position: Int,uri: Uri) {
-        if (requestCode == 200 && resultCode == Activity.RESULT_OK) {
-            try {
-                val source = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    val src: ImageDecoder.Source = ImageDecoder.createSource((activity as AppCompatActivity).contentResolver, uri)
-                    ImageDecoder.decodeBitmap(src)
-                }
-                else{
-                    @Suppress("DEPRECATION")
-                    MediaStore.Images.Media.getBitmap((activity as AppCompatActivity).contentResolver, uri)
-                }
-                // imageBitmap = Bitmap.createScaledBitmap(source, 100, 150, true)
-                (mBinding.recyclerView.findViewHolderForLayoutPosition(position) as QustionViewHolderInterface).onPictureDone(uri.toString())
-                //  QustionViewHolder.mQustionViewHolderInterface.onPictureDone(uri.toString())
-                source.recycle()
-            } catch (e: java.lang.Exception) {
-                e.printStackTrace()
-                //Try to recover
-            }
-        } else if (requestCode == 300 && resultCode == Activity.RESULT_OK) {
-            (mBinding.recyclerView.findViewHolderForLayoutPosition(position) as QustionViewHolderInterface).onPictureDone(uri.toString())
+        if ( resultCode == Activity.RESULT_OK) {
+            (mBinding.recyclerView.findViewHolderForLayoutPosition(position) as QustionViewHolderInterface).onPictureDone(
+                uri.toString()
+            )
         }
-        super.onActivityResult(requestCode, resultCode, data)
     }
 
 }
